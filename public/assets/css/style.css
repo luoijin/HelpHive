@@ -1163,11 +1163,103 @@ body[data-mode="user"] .guest-only {
 
 .search-input-field.location {
   flex: 1;
-  min-width: 200px;
+  min-width: 220px;
+  position: relative;
 }
 
 .search-input-field.distance {
-  min-width: 140px;
+  min-width: 170px;
+  position: relative;
+}
+
+.distance-trigger-btn {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  background: transparent;
+  border: none;
+  font-family: var(--font-main);
+  font-size: 15px;
+  color: var(--slate-dark);
+  cursor: pointer;
+  padding: 0;
+  outline: none;
+}
+
+.distance-trigger-btn .dropdown-chevron {
+  width: 16px;
+  height: 16px;
+  color: var(--slate-muted);
+  transition: transform 0.2s ease;
+}
+
+.distance-panel,
+.location-dropdown-panel {
+  position: absolute;
+  top: calc(100% + 8px);
+  left: 0;
+  width: 100%;
+  min-width: 230px;
+  background: #ffffff;
+  border: 1px solid var(--slate-border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-lg);
+  padding: 10px;
+  display: none;
+  flex-direction: column;
+  gap: 4px;
+  z-index: 100;
+}
+
+.distance-panel.show,
+.location-dropdown-panel.show {
+  display: flex;
+}
+
+.location-dropdown-panel {
+  min-width: 270px;
+  max-height: 280px;
+  overflow-y: auto;
+}
+
+.distance-options-list,
+.location-options-list {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.distance-opt,
+.location-opt {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 12px;
+  background: transparent;
+  border: none;
+  border-radius: var(--radius-sm);
+  font-family: var(--font-main);
+  font-size: 14px;
+  color: var(--slate-dark);
+  text-align: left;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.distance-opt:hover,
+.location-opt:hover {
+  background-color: var(--bg-light-grey);
+  color: var(--primary-green);
+}
+
+.distance-opt.active,
+.location-opt.active {
+  background-color: var(--primary-green-light);
+  color: var(--primary-green);
+  font-weight: 700;
 }
 
 .search-input-field input,

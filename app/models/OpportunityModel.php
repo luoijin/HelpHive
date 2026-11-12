@@ -21,9 +21,9 @@ final class OpportunityModel
             $sql .= ' AND o.cause_area = :cause';
             $params['cause'] = $cause;
         }
-        if (!empty($location) && $location !== 'Cebu, Philippines') {
+        if (!empty($location) && trim($location) !== '') {
             $sql .= ' AND o.location LIKE :loc';
-            $params['loc'] = '%' . $location . '%';
+            $params['loc'] = '%' . trim($location) . '%';
         }
 
         $sql .= ' ORDER BY o.start_at ASC';

@@ -3,34 +3,65 @@ declare(strict_types=1);
 
 $opportunitiesList = $opportunities ?? [];
 $keyword = $_GET['keyword'] ?? '';
-$location = $_GET['location'] ?? 'Cebu, Philippines';
+$location = $_GET['location'] ?? '';
 $selectedCause = $_GET['cause'] ?? '';
+$selectedDistance = $_GET['distance'] ?? '';
 ?>
 <!-- 2. SEARCH OPPORTUNITIES VIEW (Figma 308:40548) -->
 <section id="view-search" class="page-view active" style="display: block;">
   <div class="section-container">
     <!-- Search Header Bar -->
-    <form action="/opportunities" method="GET" class="search-top-bar" id="search-filter-form">
+    <form action="/opportunities" method="GET" class="search-top-bar" id="search-filter-form" onsubmit="event.preventDefault(); applyFilters();">
       <div class="search-input-field keyword">
         <i data-lucide="search" class="field-icon"></i>
-        <input type="text" name="keyword" id="search-keyword" value="<?= e($keyword) ?>" placeholder="Search by keyword, skill, or interest" oninput="if(typeof applyFilters === 'function') applyFilters()">
+        <input type="text" name="keyword" id="search-keyword" value="<?= e($keyword) ?>" placeholder="Search by keyword, skill, or interest" oninput="applyFilters()">
       </div>
-      <div class="search-input-field location">
+      
+      <!-- Location with PH Cities Dropdown -->
+      <div class="search-input-field location filter-dropdown" id="location-field-wrapper">
         <i data-lucide="map-pin" class="field-icon"></i>
-        <input type="text" name="location" id="search-location" value="<?= e($location) ?>" placeholder="Location">
+        <input type="text" name="location" id="search-location" value="<?= e($location) ?>" placeholder="City / Province" autocomplete="off" onfocus="showLocationDropdown()" onclick="showLocationDropdown()" oninput="handleLocationInput()">
         <button type="button" class="clear-field-btn" onclick="clearLocation()"><i data-lucide="x"></i></button>
+        <div class="filter-panel location-dropdown-panel" id="location-dropdown-panel">
+          <div class="panel-header">Popular Cities in Philippines</div>
+          <div class="location-options-list">
+            <button type="button" class="location-opt" onclick="selectLocation('Cebu City')">Cebu City</button>
+            <button type="button" class="location-opt" onclick="selectLocation('Lapu-Lapu City')">Lapu-Lapu City</button>
+            <button type="button" class="location-opt" onclick="selectLocation('Mandaue City')">Mandaue City</button>
+            <button type="button" class="location-opt" onclick="selectLocation('Manila')">Manila</button>
+            <button type="button" class="location-opt" onclick="selectLocation('Quezon City')">Quezon City</button>
+            <button type="button" class="location-opt" onclick="selectLocation('Davao City')">Davao City</button>
+            <button type="button" class="location-opt" onclick="selectLocation('Makati City')">Makati City</button>
+            <button type="button" class="location-opt" onclick="selectLocation('Taguig City')">Taguig City</button>
+            <button type="button" class="location-opt" onclick="selectLocation('Pasig City')">Pasig City</button>
+            <button type="button" class="location-opt" onclick="selectLocation('Iloilo City')">Iloilo City</button>
+            <button type="button" class="location-opt" onclick="selectLocation('Bacolod City')">Bacolod City</button>
+            <button type="button" class="location-opt" onclick="selectLocation('Cagayan de Oro')">Cagayan de Oro</button>
+          </div>
+        </div>
       </div>
-      <div class="search-input-field distance">
-        <select name="distance" id="filter-distance">
-          <option value="">Distance</option>
-          <option value="5">5 km</option>
-          <option value="10">10 km</option>
-          <option value="15">15 km</option>
-          <option value="25">25 km</option>
-          <option value="50">50 km</option>
-          <option value="province">Within my province</option>
-        </select>
+
+      <!-- Distance Dropdown UI -->
+      <div class="search-input-field distance filter-dropdown" id="distance-field-wrapper">
+        <button type="button" class="distance-trigger-btn" id="distance-trigger-btn" onclick="toggleDropdown('dropdown-distance'); event.stopPropagation();">
+          <span id="distance-label"><?= !empty($selectedDistance) ? e($selectedDistance === 'province' ? 'Within my province' : $selectedDistance . ' km') : 'Distance' ?></span>
+          <i data-lucide="chevron-down" class="dropdown-chevron"></i>
+        </button>
+        <input type="hidden" name="distance" id="filter-distance" value="<?= e($selectedDistance) ?>">
+        <div class="filter-panel distance-panel" id="dropdown-distance">
+          <div class="panel-header">Distance Radius</div>
+          <div class="distance-options-list">
+            <button type="button" class="distance-opt <?= empty($selectedDistance) ? 'active' : '' ?>" onclick="selectDistance('', 'Distance')">Any Distance</button>
+            <button type="button" class="distance-opt <?= $selectedDistance === '5' ? 'active' : '' ?>" onclick="selectDistance('5', '5 km')">Within 5 km</button>
+            <button type="button" class="distance-opt <?= $selectedDistance === '10' ? 'active' : '' ?>" onclick="selectDistance('10', '10 km')">Within 10 km</button>
+            <button type="button" class="distance-opt <?= $selectedDistance === '15' ? 'active' : '' ?>" onclick="selectDistance('15', '15 km')">Within 15 km</button>
+            <button type="button" class="distance-opt <?= $selectedDistance === '25' ? 'active' : '' ?>" onclick="selectDistance('25', '25 km')">Within 25 km</button>
+            <button type="button" class="distance-opt <?= $selectedDistance === '50' ? 'active' : '' ?>" onclick="selectDistance('50', '50 km')">Within 50 km</button>
+            <button type="button" class="distance-opt <?= $selectedDistance === 'province' ? 'active' : '' ?>" onclick="selectDistance('province', 'Within my province')">Within my province</button>
+          </div>
+        </div>
       </div>
+
       <button type="submit" class="btn btn-primary search-action-btn">
         Search
       </button>
@@ -172,11 +203,10 @@ $selectedCause = $_GET['cause'] ?? '';
     <div class="pagination-wrap">
       <button type="button" class="pagination-btn disabled" id="prev-page"><i data-lucide="chevron-left"></i></button>
       <button type="button" class="pagination-btn active">1</button>
-      <button type="button" class="pagination-btn">2</button>
-      <button type="button" class="pagination-btn">3</button>
-      <button type="button" class="pagination-btn">4</button>
-      <button type="button" class="pagination-btn">5</button>
-      <button type="button" class="pagination-btn" id="next-page"><i data-lucide="chevron-right"></i></button>
+      <button type="button" class="pagination-btn disabled" id="next-page"><i data-lucide="chevron-right"></i></button>
     </div>
   </div>
+  <script>
+    window.SERVER_OPPORTUNITIES = <?= json_encode($opportunitiesList) ?>;
+  </script>
 </section>
