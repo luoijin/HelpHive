@@ -10,8 +10,13 @@ final class OpportunityController
         $cause = $_GET['cause'] ?? null;
         $location = $_GET['location'] ?? null;
 
-        $model = new OpportunityModel(Database::connection());
-        $opportunities = $model->allPublished($keyword, $cause, $location);
+        $opportunities = [];
+        try {
+            $model = new OpportunityModel(Database::connection());
+            $opportunities = $model->allPublished($keyword, $cause, $location);
+        } catch (\PDOException $e) {
+            error_log('Database connection error in OpportunityController@index: ' . $e->getMessage());
+        }
 
         view('opportunities/index', [
             'title' => 'Search Opportunities — HelpHive',
@@ -22,8 +27,13 @@ final class OpportunityController
     /** GET /opportunities/{id} — Show details */
     public function show(int $id): void
     {
-        $model = new OpportunityModel(Database::connection());
-        $opp = $model->find($id);
+        $opp = null;
+        try {
+            $model = new OpportunityModel(Database::connection());
+            $opp = $model->find($id);
+        } catch (\PDOException $e) {
+            error_log('Database connection error in OpportunityController@show: ' . $e->getMessage());
+        }
 
         if (!$opp) {
             http_response_code(404);

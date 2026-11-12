@@ -733,6 +733,16 @@ body[data-mode="user"] .guest-only {
   border-color: #cbd5e1;
 }
 
+.hive-cards-section .hive-feature-card {
+  transition: none;
+}
+
+.hive-cards-section .hive-feature-card:hover {
+  transform: none;
+  box-shadow: var(--shadow-sm);
+  border-color: var(--slate-border);
+}
+
 .hive-feature-card.highlighted {
   border: 1px solid var(--slate-border);
   background-color: #ffffff;
@@ -778,6 +788,35 @@ body[data-mode="user"] .guest-only {
   color: var(--slate-dark);
   text-decoration: none;
   z-index: 2;
+  transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  transform-origin: center center;
+}
+
+.hive-cards-section .hive-card-arrow {
+  color: #94a3b8;
+  transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1), color 0.2s ease;
+  transform-origin: center center;
+}
+
+.hive-cards-section .hive-card-arrow svg,
+.hive-cards-section .hive-card-arrow [data-lucide] {
+  color: #94a3b8;
+  stroke: #94a3b8;
+  transition: stroke 0.2s ease, color 0.2s ease;
+}
+
+.hive-cards-section .hive-feature-card:hover .hive-card-arrow,
+.hive-cards-section .hive-card-arrow:hover {
+  transform: scale(1.2);
+  color: #000000;
+}
+
+.hive-cards-section .hive-feature-card:hover .hive-card-arrow svg,
+.hive-cards-section .hive-feature-card:hover .hive-card-arrow [data-lucide],
+.hive-cards-section .hive-card-arrow:hover svg,
+.hive-cards-section .hive-card-arrow:hover [data-lucide] {
+  color: #000000;
+  stroke: #000000;
 }
 
 .hive-card-arrow svg,
@@ -1026,8 +1065,8 @@ body[data-mode="user"] .guest-only {
 }
 
 .get-started-wrapper {
-  width: fit-content;
-  max-width: 650px;
+  width: 100%;
+  max-width: 555px;
   margin: 0 auto;
 }
 

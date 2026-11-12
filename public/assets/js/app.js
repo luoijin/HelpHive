@@ -366,9 +366,15 @@ function viewOpportunityDetails(oppId) {
 
       <!-- Action Button -->
       <div class="detail-cta-wrap">
-        <button type="button" class="btn btn-cause btn-full" style="padding: 16px; font-size: 18px;" onclick="startVolunteerRegistration('${opp.id}')">
-          Register Now
-        </button>
+        ${(document.body && document.body.getAttribute('data-mode') === 'user') ? `
+          <button type="button" class="btn btn-cause btn-full" style="padding: 16px; font-size: 18px;" onclick="startVolunteerRegistration('${opp.id}')">
+            Register Now
+          </button>
+        ` : `
+          <button type="button" class="btn btn-cause btn-full" style="padding: 16px; font-size: 18px;" onclick="openModal('login-modal')">
+            Log In to Register
+          </button>
+        `}
       </div>
     </div>
   `;
@@ -380,7 +386,14 @@ function viewOpportunityDetails(oppId) {
    VOLUNTEER REGISTRATION FLOW
    ======================================================== */
 function startVolunteerRegistration(oppId) {
-  // If guest, prompt login or let them register smoothly
+  const isUser = document.body && document.body.getAttribute('data-mode') === 'user';
+  if (!isUser) {
+    if (typeof openModal === 'function') {
+      openModal('login-modal');
+    }
+    showToast('Please log in to register for opportunities.');
+    return;
+  }
   const opp = OPPORTUNITIES_DATA.find(o => o.id === oppId);
   if (opp) {
     selectedOpportunity = opp;
@@ -461,6 +474,14 @@ function renderApplicationsList() {
 
 function toggleSaveOpportunity(e, oppId) {
   e.stopPropagation();
+  const isUser = document.body && document.body.getAttribute('data-mode') === 'user';
+  if (!isUser) {
+    if (typeof openModal === 'function') {
+      openModal('login-modal');
+    }
+    showToast('Please log in to save opportunities to your bookmarks.');
+    return;
+  }
   if (savedOpportunities.has(oppId)) {
     savedOpportunities.delete(oppId);
     showToast('Removed from Saved Opportunities');

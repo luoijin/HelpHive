@@ -57,6 +57,7 @@ return [
     // ---------------------------------------------------------------
     ['GET',  '/volunteer/dashboard',            'VolunteerController@dashboard'],    // V
     ['GET',  '/volunteer/registrations',        'VolunteerController@registrations'],// V
+    ['GET',  '/volunteer/saved',                'VolunteerController@saved'],        // V
     ['GET',  '/volunteer/hours',                'VolunteerController@hours'],        // V (verified and pending shown separately)
     ['POST', '/volunteer/hours/{id}/claim',     'VolunteerController@claimHours'],   // V (owner of registration {id})
 

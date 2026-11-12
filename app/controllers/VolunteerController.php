@@ -54,6 +54,16 @@ final class VolunteerController
         ]);
     }
 
+    /** GET /volunteer/saved */
+    public function saved(): void
+    {
+        $user = Auth::requireRole(Auth::VOLUNTEER);
+        view('volunteer/saved', [
+            'title' => 'Saved Opportunities — HelpHive',
+            'savedOpportunities' => [],
+        ]);
+    }
+
     /** POST /volunteer/hours/{id}/claim */
     public function claimHours(int $id): void
     {
