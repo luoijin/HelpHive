@@ -460,11 +460,13 @@ body[data-mode="user"] .guest-only {
   font-weight: 700;
   width: 100%;
   text-align: center;
+  transition: var(--transition);
 }
 
 .btn-cause:hover {
-  background-color: var(--primary-yellow-hover);
-  transform: scale(1.02);
+  background-color: #1B2025 !important;
+  color: #F4BD35 !important;
+  transform: none !important;
 }
 
 .btn-banner {
@@ -474,10 +476,12 @@ body[data-mode="user"] .guest-only {
   font-weight: 700;
   padding: 14px 30px;
   border-radius: var(--radius-full);
+  transition: var(--transition);
 }
 
 .btn-banner:hover {
-  background-color: var(--bg-light-grey);
+  background-color: #1B2025 !important;
+  color: #F4BD35 !important;
   transform: scale(1.02);
 }
 
@@ -676,12 +680,33 @@ body[data-mode="user"] .guest-only {
 }
 
 .hero-btn:hover {
-  background-color: var(--primary-yellow-hover);
+  background-color: #1B2025 !important;
+  color: #F4BD35 !important;
   transform: scale(1.02);
   box-shadow: var(--shadow-md);
 }
 
+.hero-btn:hover svg,
+.hero-btn:hover [data-lucide] {
+  color: #F4BD35 !important;
+  stroke: #F4BD35 !important;
+}
+
 /* Hive Cards Section */
+.text-yellow {
+  color: #F4BD35 !important;
+}
+
+.hive-cards-section {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  box-sizing: border-box;
+  padding-top: 48px;
+  padding-bottom: 48px;
+}
+
 .hive-cards-grid {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
@@ -692,10 +717,12 @@ body[data-mode="user"] .guest-only {
   background: #ffffff;
   border: 1px solid var(--slate-border);
   border-radius: var(--radius-xl);
-  padding: 40px 32px;
+  padding: 44px 32px 36px;
   position: relative;
   display: flex;
   flex-direction: column;
+  align-items: center;
+  text-align: center;
   transition: var(--transition);
   box-shadow: var(--shadow-sm);
 }
@@ -707,27 +734,22 @@ body[data-mode="user"] .guest-only {
 }
 
 .hive-feature-card.highlighted {
-  border: 2px solid var(--primary-green);
-  background-color: #fbfdfb;
+  border: 1px solid var(--slate-border);
+  background-color: #ffffff;
 }
 
-.hive-card-icon-wrap {
-  width: 58px;
-  height: 58px;
-  border-radius: var(--radius-lg);
+.hive-card-icon-center {
   display: flex;
   align-items: center;
   justify-content: center;
-  margin-bottom: 24px;
+  margin-bottom: 22px;
 }
 
-.hive-card-icon-wrap.yellow { background: #fef3c7; color: #b45309; }
-.hive-card-icon-wrap.green { background: #dcfce7; color: var(--primary-green); }
-.hive-card-icon-wrap.blue { background: #e0f2fe; color: #0369a1; }
-
-.hive-icon {
-  width: 28px;
-  height: 28px;
+.hive-card-img {
+  width: 80px;
+  height: 80px;
+  object-fit: contain;
+  display: block;
 }
 
 .hive-card-title {
@@ -741,26 +763,29 @@ body[data-mode="user"] .guest-only {
   font-size: 15px;
   color: var(--slate-muted);
   line-height: 1.6;
-  margin-bottom: 32px;
+  margin-bottom: 0;
   flex: 1;
 }
 
 .hive-card-arrow {
-  width: 40px;
-  height: 40px;
-  border-radius: 50%;
-  background: var(--bg-light-grey);
+  position: absolute;
+  top: 24px;
+  right: 24px;
+  background: transparent;
   display: flex;
   align-items: center;
   justify-content: center;
   color: var(--slate-dark);
-  align-self: flex-start;
-  transition: var(--transition);
   text-decoration: none;
+  z-index: 2;
 }
 
-.hive-feature-card:hover .hive-card-arrow {
-  background: var(--primary-yellow);
+.hive-card-arrow svg,
+.hive-card-arrow [data-lucide] {
+  width: 24px;
+  height: 24px;
+  color: var(--slate-dark);
+  stroke: var(--slate-dark);
 }
 
 /* Causes Section */
@@ -768,6 +793,16 @@ body[data-mode="user"] .guest-only {
   background-color: var(--bg-light-grey);
   border-top: 1px solid var(--slate-border);
   border-bottom: 1px solid var(--slate-border);
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  box-sizing: border-box;
+}
+
+.causes-section-bg > .section-container {
+  width: 100%;
+  padding-top: 40px;
+  padding-bottom: 40px;
 }
 
 .causes-grid {
@@ -783,13 +818,13 @@ body[data-mode="user"] .guest-only {
   overflow: hidden;
   display: flex;
   flex-direction: column;
-  transition: var(--transition);
+  transition: none;
   box-shadow: var(--shadow-sm);
 }
 
 .cause-card:hover {
-  transform: translateY(-4px);
-  box-shadow: var(--shadow-md);
+  transform: none;
+  box-shadow: var(--shadow-sm);
 }
 
 .cause-img-wrap {
@@ -803,11 +838,16 @@ body[data-mode="user"] .guest-only {
   width: 100%;
   height: 100%;
   object-fit: cover;
-  transition: transform 0.3s ease;
+  transition: transform 0.35s ease;
 }
 
 .cause-card:hover .cause-img-wrap img {
-  transform: scale(1.04);
+  transform: none;
+}
+
+/* The image should only zoom a bit when the explore cause button is hovered */
+.cause-card:has(.btn-cause:hover) .cause-img-wrap img {
+  transform: scale(1.06);
 }
 
 .cause-card-body {
@@ -860,6 +900,107 @@ body[data-mode="user"] .guest-only {
   color: var(--slate-dark);
   font-weight: 500;
   margin-bottom: 28px;
+}
+
+/* ========================================================
+   REGISTER ORGANIZATION GUEST VIEW
+   ======================================================== */
+.org-hero-section {
+  background-color: #D8A72F;
+  background-image: url('/assets/images/bhumiti-wallpaper.png');
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  height: calc(100vh - 80px);
+  min-height: calc(100vh - 80px);
+  max-height: calc(100vh - 80px);
+  padding: 0;
+  border-bottom: 1px solid var(--slate-border);
+  display: flex;
+  align-items: center;
+  position: relative;
+  box-sizing: border-box;
+  overflow: hidden;
+}
+
+.org-hero-container {
+  max-width: 1440px;
+  width: 100%;
+  height: 100%;
+  margin: 0 auto;
+  padding: 0 48px;
+  display: flex;
+  justify-content: flex-end; /* Card on the RIGHT */
+  align-items: center;
+  box-sizing: border-box;
+}
+
+.org-hero-card {
+  background: #ffffff;
+  border: 1px solid rgba(226, 229, 232, 0.9);
+  border-radius: var(--radius-xl);
+  padding: 24px 36px 28px;
+  width: 55%;
+  max-width: 620px;
+  max-height: calc(100% - 24px);
+  box-shadow: 0 20px 48px rgba(0, 0, 0, 0.14);
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: flex-start;
+  text-align: left;
+  box-sizing: border-box;
+}
+
+.org-hero-img-wrap {
+  width: 100%;
+  height: 200px;
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  margin-bottom: 16px;
+  background: #f1f5f9;
+}
+
+.org-hero-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center 25%;
+  display: block;
+}
+
+.org-hero-title {
+  font-family: var(--font-heading);
+  font-size: 26px;
+  font-weight: 900;
+  line-height: 1.15;
+  color: var(--slate-dark);
+  letter-spacing: -0.5px;
+  margin-bottom: 10px;
+  text-transform: uppercase;
+}
+
+.org-hero-description {
+  font-size: 15px;
+  line-height: 1.5;
+  color: var(--slate-body);
+  margin-bottom: 18px;
+  max-width: 100%;
+}
+
+.org-hero-cta {
+  display: flex;
+  align-items: center;
+}
+
+.why-join-section {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  box-sizing: border-box;
+  background: #ffffff;
+  border-bottom: 1px solid var(--slate-border);
 }
 
 /* ========================================================
@@ -1866,8 +2007,28 @@ body[data-mode="user"] .guest-only {
 }
 
 .footer-logo-img {
-  height: 38px;
+  height: 44px;
   width: auto;
+  max-width: 180px;
+  object-fit: contain;
+  display: block;
+}
+
+.footer-legal-inline {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+}
+
+.footer-legal-inline a {
+  color: var(--slate-muted);
+  text-decoration: none;
+  transition: var(--transition);
+}
+
+.footer-legal-inline a:hover {
+  color: var(--slate-dark);
 }
 
 .footer-brand-name {
@@ -2020,6 +2181,25 @@ body[data-mode="user"] .guest-only {
 
 /* Responsive Breakpoints */
 @media (max-width: 1024px) {
+  .hive-cards-section {
+    min-height: auto;
+    height: auto;
+    padding-top: 60px;
+    padding-bottom: 60px;
+  }
+  .causes-section-bg {
+    min-height: auto;
+    height: auto;
+  }
+  .why-join-section {
+    min-height: auto;
+    height: auto;
+    padding-top: 60px;
+    padding-bottom: 60px;
+  }
+  .org-hero-card {
+    width: 75%;
+  }
   .hive-cards-grid {
     grid-template-columns: 1fr;
   }
@@ -2054,6 +2234,28 @@ body[data-mode="user"] .guest-only {
     min-height: auto;
     max-height: none;
     padding: 32px 24px;
+  }
+  .org-hero-section {
+    height: auto;
+    min-height: calc(100vh - 80px);
+    max-height: none;
+    padding: 32px 0;
+  }
+  .org-hero-container {
+    height: auto;
+    padding: 0 20px;
+    justify-content: center;
+  }
+  .org-hero-card {
+    width: 100%;
+    max-height: none;
+    padding: 24px 20px;
+  }
+  .org-hero-img-wrap {
+    height: 160px;
+  }
+  .org-hero-title {
+    font-size: 22px;
   }
   .nav-container {
     padding: 0 20px;

@@ -34,6 +34,8 @@ return [
     // ---------------------------------------------------------------
     ['GET',  '/register',                       'AuthController@showRegister'],      // G
     ['POST', '/register',                       'AuthController@register'],          // G
+    ['GET',  '/org/register',                   'AuthController@showRegisterOrg'],   // G, AUTH
+    ['POST', '/org/register',                   'AuthController@registerOrg'],       // AUTH
     ['GET',  '/login',                          'AuthController@showLogin'],         // G
     ['POST', '/login',                          'AuthController@login'],             // G
     ['POST', '/logout',                         'AuthController@logout'],            // AUTH

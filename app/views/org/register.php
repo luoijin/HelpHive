@@ -1,8 +1,10 @@
 <?php
 declare(strict_types=1);
+
+$user = Auth::user() ?? ($user ?? []);
 ?>
-<!-- 8. REGISTER ORGANIZATION VIEW (Figma 381:8965 & 308:40647) -->
-<section id="view-register-org" class="page-view active" style="display: block;">
+<!-- 8. REGISTER ORGANIZATION VIEW (User-Side Form) -->
+<section id="view-register-org" class="page-view active" style="display: block; padding-top: 40px; padding-bottom: 60px;">
   <div class="section-container max-w-700">
     <div class="form-card-container">
       <div class="form-header">
@@ -48,17 +50,12 @@ declare(strict_types=1);
 
         <div class="form-group">
           <label for="org-contact-person">Contact Person's Full Name*</label>
-          <input type="text" id="org-contact-person" name="full_name" required placeholder="e.g. Maria Santos">
+          <input type="text" id="org-contact-person" name="full_name" required value="<?= e($user['full_name'] ?? $user['name'] ?? '') ?>" placeholder="e.g. Maria Santos">
         </div>
 
         <div class="form-group">
           <label for="org-email">Account & Organization Email*</label>
-          <input type="email" id="org-email" name="email" required placeholder="contact@organization.org">
-        </div>
-
-        <div class="form-group">
-          <label for="org-password">Account Password*</label>
-          <input type="password" id="org-password" name="password" minlength="8" required placeholder="Minimum 8 characters">
+          <input type="email" id="org-email" name="email" required value="<?= e($user['email'] ?? '') ?>" placeholder="contact@organization.org">
         </div>
 
         <div class="form-group">

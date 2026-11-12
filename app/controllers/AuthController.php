@@ -6,17 +6,52 @@ final class AuthController
     /** GET /register */
     public function showRegister(): void
     {
-        if (Auth::user()) {
+        $role = $_GET['role'] ?? '';
+        $currentUser = Auth::user();
+
+        if ($role === 'organization') {
+            if ($currentUser === null) {
+                // Guest side: Show guest organization landing page
+                view('org/guest', ['title' => 'Register Your Organization — HelpHive']);
+                return;
+            }
+
+            // User side: User is authenticated
+            $orgModel = new OrganizationModel(Database::connection());
+            $existingOrg = $orgModel->findByUserId((int) $currentUser['id']);
+            if ($existingOrg !== null) {
+                Flash::info('Your organization is already registered.');
+                header('Location: /org/dashboard');
+                exit;
+            }
+
+            view('org/register', [
+                'title' => 'Register Your Organization — HelpHive',
+                'user' => $currentUser,
+            ]);
+            return;
+        }
+
+        if ($currentUser !== null) {
             header('Location: /');
             exit;
         }
 
-        if (($_GET['role'] ?? '') === 'organization') {
-            view('org/register', ['title' => 'Register Your Organization — HelpHive']);
-            return;
-        }
-
         view('auth/register', ['title' => 'Create Account — HelpHive']);
+    }
+
+    /** GET /org/register */
+    public function showRegisterOrg(): void
+    {
+        $_GET['role'] = 'organization';
+        $this->showRegister();
+    }
+
+    /** POST /org/register */
+    public function registerOrg(): void
+    {
+        $_POST['role'] = 'organization';
+        $this->register();
     }
 
     /** POST /register */
@@ -27,16 +62,62 @@ final class AuthController
             $role = 'volunteer';
         }
 
+        // Organization registration (User side validation)
+        if ($role === 'organization') {
+            $currentUser = Auth::user();
+            if ($currentUser === null) {
+                Flash::error('You must be logged in to register an organization. Please log in or create an account first.');
+                header('Location: /login');
+                exit;
+            }
+
+            $orgName = trim($_POST['organization_name'] ?? '');
+            $orgType = trim($_POST['organization_type'] ?? 'Nonprofit');
+            $causeArea = trim($_POST['cause_area'] ?? '');
+            $location = trim($_POST['location'] ?? '');
+            $description = trim($_POST['description'] ?? '');
+            $contactEmail = trim($_POST['email'] ?? $currentUser['email']);
+
+            if ($orgName === '' || $location === '' || $description === '') {
+                Flash::error('Please fill in all required organization fields.');
+                header('Location: /register?role=organization');
+                exit;
+            }
+
+            $orgModel = new OrganizationModel(Database::connection());
+            if ($orgModel->findByUserId((int) $currentUser['id']) !== null) {
+                Flash::info('You have already registered an organization.');
+                header('Location: /org/dashboard');
+                exit;
+            }
+
+            $fullDesc = ($orgType ? "[Type: {$orgType}] " : '') . ($causeArea ? "[Cause: {$causeArea}] " : '') . $description;
+
+            $orgModel->create(
+                (int) $currentUser['id'],
+                $orgName,
+                $fullDesc,
+                $contactEmail,
+                $location,
+                0 // requires admin approval
+            );
+
+            // Update user role to organization and refresh session
+            $userModel = new UserModel(Database::connection());
+            $userModel->updateRole((int) $currentUser['id'], Auth::ORGANIZATION);
+            $_SESSION['user'] = $userModel->findById((int) $currentUser['id']);
+
+            Flash::success('Organization submitted successfully! Awaiting administrator approval.');
+            header('Location: /org/dashboard');
+            exit;
+        }
+
+        // Standard account registration (Guest)
         $email = trim($_POST['email'] ?? '');
         $password = $_POST['password'] ?? '';
         $firstName = trim($_POST['first_name'] ?? '');
         $lastName = trim($_POST['last_name'] ?? '');
         $fullName = trim($firstName . ' ' . $lastName);
-
-        if ($role === 'organization') {
-            $fullName = trim($_POST['full_name'] ?? $fullName ?: 'Representative');
-            $orgName = trim($_POST['organization_name'] ?? 'Partner Organization');
-        }
 
         if ($email === '' || strlen($password) < 8 || $fullName === '') {
             Flash::error('Please fill in all required fields. Password must be at least 8 characters.');
@@ -52,29 +133,13 @@ final class AuthController
         }
 
         $hash = password_hash($password, PASSWORD_DEFAULT);
-        $userId = $userModel->create($fullName, $email, $hash, $role);
-
-        if ($role === 'organization') {
-            $orgModel = new OrganizationModel(Database::connection());
-            $orgModel->create(
-                $userId,
-                $orgName ?? 'Organization',
-                trim($_POST['description'] ?? ''),
-                $email,
-                trim($_POST['location'] ?? ''),
-                0 // requires admin approval
-            );
-        }
+        $userId = $userModel->create($fullName, $email, $hash, 'volunteer');
 
         $user = $userModel->findById($userId);
         Auth::login($user);
 
         Flash::success('Account created successfully! Welcome to HelpHive.');
-        if ($role === 'organization') {
-            header('Location: /org/dashboard');
-        } else {
-            header('Location: /opportunities');
-        }
+        header('Location: /opportunities');
         exit;
     }
 

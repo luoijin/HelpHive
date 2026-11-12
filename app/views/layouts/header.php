@@ -21,7 +21,7 @@ $userName = $currentUser['name'] ?? 'Volunteer';
         <a href="/" class="nav-item <?= ($_SERVER['REQUEST_URI'] === '/' || parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH) === '/') ? 'active' : '' ?>" id="nav-link-home">Home</a>
         <a href="/opportunities" class="nav-item <?= str_starts_with(parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH) ?? '', '/opportunities') ? 'active' : '' ?>" id="nav-link-search">Search Opportunities</a>
         <?php if (!$isLoggedIn || $userRole === Auth::VOLUNTEER): ?>
-          <a href="/register?role=organization" class="nav-item" id="nav-link-register-org">Register Organization</a>
+          <a href="/register?role=organization" class="nav-item <?= (str_contains($_SERVER['REQUEST_URI'] ?? '', 'role=organization') || str_starts_with(parse_url($_SERVER['REQUEST_URI'] ?? '', PHP_URL_PATH) ?? '', '/org/register')) ? 'active' : '' ?>" id="nav-link-register-org">Register Organization</a>
         <?php elseif ($userRole === Auth::ORGANIZATION): ?>
           <a href="/org/opportunities/create" class="nav-item">Post Opportunity</a>
         <?php endif; ?>

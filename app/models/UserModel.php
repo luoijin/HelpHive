@@ -52,4 +52,11 @@ final class UserModel
     {
         return (int) $this->db->query('SELECT COUNT(*) FROM users')->fetchColumn();
     }
+
+    public function updateRole(int $id, string $role): bool
+    {
+        $st = $this->db->prepare('UPDATE users SET role = :role WHERE id = :id');
+        $st->execute(['role' => $role, 'id' => $id]);
+        return $st->rowCount() === 1;
+    }
 }

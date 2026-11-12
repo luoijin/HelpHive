@@ -29,45 +29,45 @@ declare(strict_types=1);
   <!-- Find Your Place in the Hive Section -->
   <section class="section-container hive-cards-section">
     <div class="section-heading text-center">
-      <h2 class="section-title">Find Your Place in the Hive and Make a Difference</h2>
+      <h2 class="section-title">Find Your Place in the <span class="text-yellow">Hive</span> and Make a Difference</h2>
       <p class="section-subtitle">Everyone has something to give. Find a cause close to your heart and make a difference, one good deed at a time.</p>
     </div>
 
     <div class="hive-cards-grid">
       <!-- Card 1 -->
       <div class="hive-feature-card">
-        <div class="hive-card-icon-wrap yellow">
-          <i data-lucide="users" class="hive-icon"></i>
+        <a href="#" class="hive-card-arrow" onclick="openModal('signup-modal'); return false;" aria-label="Join the Hive">
+          <i data-lucide="arrow-up-right"></i>
+        </a>
+        <div class="hive-card-icon-center">
+          <img src="<?= asset('assets/images/join.png') ?>" alt="Join the Hive" class="hive-card-img">
         </div>
         <h3 class="hive-card-title">Join the Hive</h3>
         <p class="hive-card-desc">Become part of a caring community where people share their time and talents to make a difference.</p>
-        <a href="#" class="hive-card-arrow" onclick="openModal('signup-modal'); return false;">
-          <i data-lucide="arrow-up-right"></i>
-        </a>
       </div>
 
       <!-- Card 2 -->
-      <div class="hive-feature-card highlighted">
-        <div class="hive-card-icon-wrap green">
-          <i data-lucide="heart-handshake" class="hive-icon"></i>
+      <div class="hive-feature-card">
+        <a href="/opportunities" class="hive-card-arrow" aria-label="Volunteer Opportunities">
+          <i data-lucide="arrow-up-right"></i>
+        </a>
+        <div class="hive-card-icon-center">
+          <img src="<?= asset('assets/images/volunteer.png') ?>" alt="Volunteer Opportunities" class="hive-card-img">
         </div>
         <h3 class="hive-card-title">Volunteer Opportunities</h3>
         <p class="hive-card-desc">Find meaningful volunteer activities that match your interests and help make your community a better place.</p>
-        <a href="/opportunities" class="hive-card-arrow">
-          <i data-lucide="arrow-up-right"></i>
-        </a>
       </div>
 
       <!-- Card 3 -->
       <div class="hive-feature-card">
-        <div class="hive-card-icon-wrap blue">
-          <i data-lucide="building-2" class="hive-icon"></i>
+        <a href="/register?role=organization" class="hive-card-arrow" aria-label="Register Your Organization">
+          <i data-lucide="arrow-up-right"></i>
+        </a>
+        <div class="hive-card-icon-center">
+          <img src="<?= asset('assets/images/org.png') ?>" alt="Register Your Organization" class="hive-card-img">
         </div>
         <h3 class="hive-card-title">Register Your Organization</h3>
         <p class="hive-card-desc">Share volunteer opportunities and connect with people who want to help bring your community projects to life.</p>
-        <a href="/register?role=organization" class="hive-card-arrow">
-          <i data-lucide="arrow-up-right"></i>
-        </a>
       </div>
     </div>
   </section>
@@ -132,32 +132,10 @@ declare(strict_types=1);
     </div>
   </section>
 
-  <!-- Yellow Banner Section -->
-  <section class="banner-section">
-    <div class="banner-inner">
-      <h2 class="banner-title">A Kinder World Begins With You.</h2>
-      <p class="banner-sub">Find a cause you care about and turn your kindness into action.</p>
-      <a href="#about" class="btn btn-banner" style="text-decoration: none; display: inline-block;">Learn About HelpHive</a>
-    </div>
-  </section>
-
-  <!-- About Section -->
-  <section id="about" class="section-container max-w-700" style="padding-top: 60px; padding-bottom: 40px;">
-    <div class="section-heading text-center">
-      <h2 class="section-title">About HelpHive</h2>
-      <p class="section-subtitle">One Hive. One Heart. One Purpose. Together, we make good happen.</p>
-    </div>
-    <div class="content-card">
-      <p style="margin-bottom: 16px;">HelpHive is a community volunteering platform designed to connect volunteers with local nonprofit organizations and community groups.</p>
-      <p>Our goal is to build a functional platform where organizations can publish volunteering opportunities, volunteers can discover and register for activities, and completed volunteer hours can be recorded, verified, and celebrated.</p>
-    </div>
-  </section>
-
   <!-- FAQs Section -->
-  <section id="faqs" class="section-container max-w-700" style="padding-top: 20px; padding-bottom: 60px;">
-    <div class="section-heading text-center">
-      <h2 class="section-title">Frequently Asked Questions</h2>
-      <p class="section-subtitle">Find quick answers about HelpHive volunteering, registrations, and hour verification.</p>
+  <section id="faqs" class="section-container max-w-700" style="padding-top: 60px; padding-bottom: 40px;">
+    <div class="section-heading text-center" style="margin-bottom: 32px;">
+      <h2 class="section-title">FAQ</h2>
     </div>
 
     <div class="faq-accordion">
@@ -190,6 +168,15 @@ declare(strict_types=1);
           <p>After you attend a scheduled activity, the organizing organization reviews attendance and marks your hours as verified in the HelpHive dashboard.</p>
         </div>
       </div>
+    </div>
+  </section>
+
+  <!-- Yellow Banner Section -->
+  <section class="banner-section" style="padding-top: 20px; padding-bottom: 60px;">
+    <div class="banner-inner">
+      <h2 class="banner-title">A Kinder World Begins With You.</h2>
+      <p class="banner-sub">Find a cause you care about and turn your kindness into action.</p>
+      <a href="/opportunities" class="btn btn-banner" style="text-decoration: none; display: inline-block;">Learn About HelpHive</a>
     </div>
   </section>
 </section>
