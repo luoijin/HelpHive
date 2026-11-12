@@ -28,7 +28,7 @@ declare(strict_types=1);
 
   <!-- Section 2: WHY JOIN HELPHIVE? -->
   <section class="why-join-section">
-    <div class="section-container" style="padding-top: 60px; padding-bottom: 60px;">
+    <div class="section-container">
       <div class="section-heading text-center" style="margin-bottom: 48px;">
         <h2 class="section-title">WHY JOIN HELP<span class="text-yellow">HIVE</span>?</h2>
       </div>
@@ -37,7 +37,7 @@ declare(strict_types=1);
         <!-- Feature 1: Find Volunteers -->
         <div class="hive-feature-card">
           <div class="hive-card-icon-center">
-            <img src="<?= asset('assets/images/volunteer.png') ?>" alt="Find Volunteers" class="hive-card-img">
+            <img src="<?= asset('assets/images/find-volunteers.png') ?>" alt="Find Volunteers" class="hive-card-img">
           </div>
           <h3 class="hive-card-title">Find Volunteers</h3>
           <p class="hive-card-desc">Connect with people who<br>care about your cause.</p>
@@ -46,7 +46,7 @@ declare(strict_types=1);
         <!-- Feature 2: Post Opportunities -->
         <div class="hive-feature-card">
           <div class="hive-card-icon-center">
-            <img src="<?= asset('assets/images/join.png') ?>" alt="Post Opportunities" class="hive-card-img">
+            <img src="<?= asset('assets/images/post-opportunities.png') ?>" alt="Post Opportunities" class="hive-card-img">
           </div>
           <h3 class="hive-card-title">Post Opportunities</h3>
           <p class="hive-card-desc">Share activities and welcome<br>new volunteers.</p>
@@ -55,10 +55,48 @@ declare(strict_types=1);
         <!-- Feature 3: Track Impact -->
         <div class="hive-feature-card">
           <div class="hive-card-icon-center">
-            <img src="<?= asset('assets/images/org.png') ?>" alt="Track Impact" class="hive-card-img">
+            <img src="<?= asset('assets/images/track-impact.png') ?>" alt="Track Impact" class="hive-card-img">
           </div>
           <h3 class="hive-card-title">Track Impact</h3>
           <p class="hive-card-desc">Manage participation and<br>verified volunteer hours.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Section 3: GET STARTED IN 3 SIMPLE STEPS -->
+  <section class="get-started-section">
+    <div class="section-container">
+      <div class="get-started-wrapper">
+        <h2 class="section-title get-started-title">GET STARTED IN <span class="text-yellow">3 SIMPLE STEPS</span></h2>
+
+        <div class="steps-vertical-wrap">
+          <!-- Step 1 -->
+          <div class="step-bullet-item">
+            <div class="step-bullet-num">1</div>
+            <div class="step-bullet-content">
+              <h3 class="step-bullet-title">Create an Account</h3>
+              <p class="step-bullet-desc">Sign up or log in to get started.</p>
+            </div>
+          </div>
+
+          <!-- Step 2 -->
+          <div class="step-bullet-item">
+            <div class="step-bullet-num">2</div>
+            <div class="step-bullet-content">
+              <h3 class="step-bullet-title">Register Your Organization</h3>
+              <p class="step-bullet-desc">Submit your organization's information for review.</p>
+            </div>
+          </div>
+
+          <!-- Step 3 -->
+          <div class="step-bullet-item">
+            <div class="step-bullet-num">3</div>
+            <div class="step-bullet-content">
+              <h3 class="step-bullet-title">Start Making an Impact</h3>
+              <p class="step-bullet-desc">Once approved, publish opportunities and manage volunteer participation.</p>
+            </div>
+          </div>
         </div>
       </div>
     </div>

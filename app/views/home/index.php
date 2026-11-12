@@ -135,7 +135,7 @@ declare(strict_types=1);
   <!-- FAQs Section -->
   <section id="faqs" class="section-container max-w-700" style="padding-top: 60px; padding-bottom: 40px;">
     <div class="section-heading text-center" style="margin-bottom: 32px;">
-      <h2 class="section-title">FAQ</h2>
+      <h2 class="section-title">Frequently Asked Questions</h2>
     </div>
 
     <div class="faq-accordion">

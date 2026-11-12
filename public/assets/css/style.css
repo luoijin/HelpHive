@@ -939,10 +939,9 @@ body[data-mode="user"] .guest-only {
   background: #ffffff;
   border: 1px solid rgba(226, 229, 232, 0.9);
   border-radius: var(--radius-xl);
-  padding: 24px 36px 28px;
-  width: 55%;
-  max-width: 620px;
-  max-height: calc(100% - 24px);
+  padding: 18px 18px 28px;
+  width: 60%;
+  max-height: calc(100% - 32px);
   box-shadow: 0 20px 48px rgba(0, 0, 0, 0.14);
   display: flex;
   flex-direction: column;
@@ -954,10 +953,10 @@ body[data-mode="user"] .guest-only {
 
 .org-hero-img-wrap {
   width: 100%;
-  height: 200px;
-  border-radius: var(--radius-lg);
+  height: 280px;
+  border-radius: 16px 16px 0 0;
   overflow: hidden;
-  margin-bottom: 16px;
+  margin-bottom: 22px;
   background: #f1f5f9;
 }
 
@@ -965,26 +964,26 @@ body[data-mode="user"] .guest-only {
   width: 100%;
   height: 100%;
   object-fit: cover;
-  object-position: center 25%;
+  object-position: 50% 48%;
   display: block;
 }
 
 .org-hero-title {
   font-family: var(--font-heading);
-  font-size: 26px;
+  font-size: clamp(28px, 2.2vw, 36px);
   font-weight: 900;
   line-height: 1.15;
   color: var(--slate-dark);
   letter-spacing: -0.5px;
-  margin-bottom: 10px;
+  margin-bottom: 14px;
   text-transform: uppercase;
 }
 
 .org-hero-description {
-  font-size: 15px;
-  line-height: 1.5;
+  font-size: 16px;
+  line-height: 1.55;
   color: var(--slate-body);
-  margin-bottom: 18px;
+  margin-bottom: 24px;
   max-width: 100%;
 }
 
@@ -994,13 +993,97 @@ body[data-mode="user"] .guest-only {
 }
 
 .why-join-section {
-  min-height: 100vh;
+  padding: 80px 0;
   display: flex;
   flex-direction: column;
   justify-content: center;
   box-sizing: border-box;
   background: #ffffff;
   border-bottom: 1px solid var(--slate-border);
+}
+
+.why-join-section .hive-feature-card {
+  transition: none;
+}
+
+.why-join-section .hive-feature-card:hover {
+  transform: none;
+  box-shadow: var(--shadow-sm);
+  border-color: var(--slate-border);
+}
+
+/* ========================================================
+   SECTION 3: GET STARTED IN 3 SIMPLE STEPS
+   ======================================================== */
+.get-started-section {
+  padding: 80px 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  background-color: var(--bg-light-grey);
+  border-bottom: 1px solid var(--slate-border);
+  box-sizing: border-box;
+}
+
+.get-started-wrapper {
+  width: fit-content;
+  max-width: 650px;
+  margin: 0 auto;
+}
+
+.get-started-title {
+  text-align: left;
+  margin-bottom: 40px;
+}
+
+.steps-vertical-wrap {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 32px;
+}
+
+.step-bullet-item {
+  display: flex;
+  align-items: center;
+  gap: 24px;
+}
+
+.step-bullet-num {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  background: var(--primary-yellow);
+  color: #1B2025;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--font-heading);
+  font-size: 22px;
+  font-weight: 800;
+  flex-shrink: 0;
+  box-shadow: none; /* No glow */
+}
+
+.step-bullet-content {
+  flex: 1;
+  padding-top: 2px;
+}
+
+.step-bullet-title {
+  font-family: var(--font-heading);
+  font-size: 20px;
+  font-weight: 800;
+  color: var(--slate-dark);
+  margin-bottom: 6px;
+  letter-spacing: -0.2px;
+}
+
+.step-bullet-desc {
+  font-size: 15px;
+  color: var(--slate-muted);
+  line-height: 1.55;
+  margin: 0;
 }
 
 /* ========================================================
