@@ -36,6 +36,77 @@
   padding: 0;
 }
 
+/* ========================================================
+   CUSTOM SCROLLBAR UI (Do not use default OS scrollbars)
+   ======================================================== */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: #cbd5e1 #f8f9fa;
+}
+
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: #f1f5f9;
+  border-radius: var(--radius-full);
+}
+
+::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: var(--radius-full);
+  border: 2px solid #f1f5f9;
+  transition: background-color 0.2s ease;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
+}
+
+::-webkit-scrollbar-thumb:active {
+  background: var(--primary-yellow);
+}
+
+/* Specific scrolling containers: modals, dropdowns, panels, tables */
+.modal-card::-webkit-scrollbar,
+.filter-panel::-webkit-scrollbar,
+.location-dropdown-panel::-webkit-scrollbar,
+.profile-dropdown-menu::-webkit-scrollbar,
+.opportunities-list::-webkit-scrollbar,
+.table-responsive::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+.modal-card::-webkit-scrollbar-track,
+.filter-panel::-webkit-scrollbar-track,
+.location-dropdown-panel::-webkit-scrollbar-track,
+.profile-dropdown-menu::-webkit-scrollbar-track,
+.table-responsive::-webkit-scrollbar-track {
+  background: #f8f9fa;
+  border-radius: var(--radius-full);
+}
+
+.modal-card::-webkit-scrollbar-thumb,
+.filter-panel::-webkit-scrollbar-thumb,
+.location-dropdown-panel::-webkit-scrollbar-thumb,
+.profile-dropdown-menu::-webkit-scrollbar-thumb,
+.table-responsive::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 9999px;
+  border: none;
+}
+
+.modal-card::-webkit-scrollbar-thumb:hover,
+.filter-panel::-webkit-scrollbar-thumb:hover,
+.location-dropdown-panel::-webkit-scrollbar-thumb:hover,
+.profile-dropdown-menu::-webkit-scrollbar-thumb:hover,
+.table-responsive::-webkit-scrollbar-thumb:hover {
+  background: var(--primary-yellow);
+}
+
 html, body {
   margin: 0 !important;
   padding: 0 !important;
@@ -485,7 +556,7 @@ body[data-mode="user"] .guest-only {
   transform: scale(1.02);
 }
 
-/* Exception: Login and Signup in navbar & modals retain their rectangular style */
+/* Exception: Login and Signup in navbar & modals retain their clean rectangular style */
 .nav-actions .btn,
 .nav-actions .btn-primary,
 .nav-actions .btn-ghost,
@@ -493,18 +564,32 @@ body[data-mode="user"] .guest-only {
 .modal-box .btn-primary,
 .modal-box .btn-ghost,
 .modal-box .modal-submit-btn,
+.modal-card .modal-submit-btn,
 .auth-card .btn,
-.auth-card .modal-submit-btn {
+.auth-card .modal-submit-btn,
+.form-card-container .modal-submit-btn {
   border-radius: var(--radius-md) !important;
   font-weight: 600 !important;
   padding: 10px 22px !important;
   transform: none !important;
 }
 
+/* Signup and login buttons stay static on hover: NO enlarging or scale */
+.nav-actions .btn:hover,
 .nav-actions .btn-primary:hover,
+.nav-actions .btn-ghost:hover,
+.modal-box .btn:hover,
 .modal-box .btn-primary:hover,
-.auth-card .btn-primary:hover {
-  transform: translateY(-1px) !important;
+.modal-box .modal-submit-btn:hover,
+.modal-card .modal-submit-btn:hover,
+.modal-card .btn-social:hover,
+.auth-card .btn:hover,
+.auth-card .btn-primary:hover,
+.auth-card .modal-submit-btn:hover,
+.form-card-container .modal-submit-btn:hover,
+.btn-login:hover,
+.btn-signup:hover {
+  transform: none !important;
 }
 
 .btn-full {
@@ -1219,9 +1304,22 @@ body[data-mode="user"] .guest-only {
 }
 
 .location-dropdown-panel {
-  min-width: 270px;
-  max-height: 280px;
+  min-width: 310px;
+  max-height: 320px;
   overflow-y: auto;
+}
+
+.location-group-title {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--slate-muted);
+  padding: 6px 12px 2px;
+  background: var(--bg-light-grey);
+  border-radius: var(--radius-sm);
+  margin-top: 6px;
+  margin-bottom: 2px;
 }
 
 .distance-options-list,
@@ -1427,7 +1525,7 @@ body[data-mode="user"] .guest-only {
 }
 
 .opportunity-card:hover {
-  transform: translateY(-2px);
+  transform: none !important;
   box-shadow: var(--shadow-md);
   border-color: #cbd5e1;
 }
@@ -1642,7 +1740,7 @@ body[data-mode="user"] .guest-only {
 
 .quick-info-grid {
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
   gap: 20px;
   background: var(--bg-light-grey);
   padding: 24px;
@@ -2080,11 +2178,11 @@ body[data-mode="user"] .guest-only {
 }
 
 .modal-divider {
-  width: 60px;
-  height: 3px;
-  background: var(--primary-yellow);
-  margin: 12px auto;
-  border-radius: 2px;
+  width: 100%;
+  height: 1px;
+  background: var(--slate-border);
+  margin: 18px 0 20px 0;
+  border-radius: 0;
 }
 
 .modal-heading {
@@ -2486,4 +2584,232 @@ body[data-mode="user"] .guest-only {
   .hero-title {
     font-size: 36px;
   }
+}
+
+/* ========================================================
+   OPPORTUNITY DETAILS MODAL (Search Opportunities)
+   ======================================================== */
+.modal-card-opportunity {
+  max-width: 820px !important;
+  width: 95% !important;
+  max-height: 90vh !important;
+  overflow-y: auto !important;
+  padding: 0 !important;
+  border-radius: var(--radius-xl) !important;
+}
+
+.modal-card-opportunity .modal-close-btn {
+  top: 16px;
+  right: 16px;
+  background: rgba(255, 255, 255, 0.95);
+  box-shadow: var(--shadow-sm);
+  z-index: 10;
+}
+
+.modal-card-opportunity .modal-close-btn:hover {
+  background: #ffffff;
+}
+
+.modal-card-opportunity .detail-hero-banner {
+  height: 260px;
+  width: 100%;
+  overflow: hidden;
+  border-radius: var(--radius-xl) var(--radius-xl) 0 0;
+  background: #e2e8f0;
+}
+
+.modal-card-opportunity .detail-hero-banner img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.modal-card-opportunity .detail-body {
+  padding: 28px 32px 36px;
+}
+
+.view-full-page-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--primary-green);
+  text-decoration: none;
+  padding: 6px 12px;
+  background: var(--primary-green-light);
+  border-radius: var(--radius-full);
+  transition: var(--transition);
+}
+
+.view-full-page-link:hover {
+  background: #d1fae5;
+  color: var(--primary-green-hover);
+}
+
+/* ========================================================
+   CUSTOM ROLE SELECTOR UI ("I want to join as")
+   ======================================================== */
+.custom-role-dropdown {
+  position: relative;
+  width: 100%;
+}
+
+.role-dropdown-trigger {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 14px;
+  background: #ffffff;
+  border: 1px solid var(--slate-border);
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  transition: var(--transition);
+  text-align: left;
+  outline: none;
+}
+
+.role-dropdown-trigger:hover,
+.custom-role-dropdown.open .role-dropdown-trigger {
+  border-color: var(--primary-yellow);
+  box-shadow: 0 0 0 3px rgba(244, 189, 53, 0.18);
+}
+
+.role-trigger-left {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.role-icon-box {
+  width: 36px;
+  height: 36px;
+  border-radius: var(--radius-sm);
+  background: var(--primary-yellow-light);
+  color: #b45309;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.role-trigger-text {
+  display: flex;
+  flex-direction: column;
+}
+
+.role-title {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--slate-dark);
+  line-height: 1.2;
+}
+
+.role-desc {
+  font-size: 12px;
+  color: var(--slate-muted);
+  line-height: 1.2;
+  margin-top: 2px;
+}
+
+.role-chevron {
+  width: 18px;
+  height: 18px;
+  color: var(--slate-muted);
+  transition: transform 0.2s ease;
+  flex-shrink: 0;
+}
+
+.custom-role-dropdown.open .role-chevron {
+  transform: rotate(180deg);
+}
+
+.role-dropdown-menu {
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 0;
+  width: 100%;
+  background: #ffffff;
+  border: 1px solid var(--slate-border);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-lg);
+  padding: 6px;
+  display: none;
+  flex-direction: column;
+  gap: 4px;
+  z-index: 100;
+}
+
+.custom-role-dropdown.open .role-dropdown-menu {
+  display: flex;
+}
+
+.role-dropdown-option {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 12px;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: all 0.15s ease;
+  border: 1px solid transparent;
+}
+
+.role-dropdown-option:hover {
+  background: var(--bg-light-grey);
+}
+
+.role-dropdown-option.selected {
+  background: #fefce8;
+  border-color: #fde047;
+}
+
+.role-option-icon {
+  width: 34px;
+  height: 34px;
+  border-radius: var(--radius-sm);
+  background: var(--bg-light-grey);
+  color: var(--slate-dark);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.role-dropdown-option.selected .role-option-icon {
+  background: var(--primary-yellow);
+  color: var(--slate-dark);
+}
+
+.role-option-info {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+.role-option-title {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--slate-dark);
+}
+
+.role-option-desc {
+  font-size: 12px;
+  color: var(--slate-muted);
+  margin-top: 1px;
+}
+
+.role-check-icon {
+  width: 18px;
+  height: 18px;
+  color: var(--primary-green);
+  opacity: 0;
+  transition: opacity 0.15s ease;
+  flex-shrink: 0;
+}
+
+.role-dropdown-option.selected .role-check-icon {
+  opacity: 1;
 }

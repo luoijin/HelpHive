@@ -45,6 +45,10 @@ $opp = $opportunity ?? [
             <div class="val"><?= e(date('M d, Y • g:i A', strtotime($opp['start_at'] ?? 'now'))) ?></div>
           </div>
           <div class="info-box">
+            <div class="label">Duration</div>
+            <div class="val"><?= e($opp['duration'] ?? 'One day') ?></div>
+          </div>
+          <div class="info-box">
             <div class="label">Location</div>
             <div class="val"><?= e($opp['location']) ?></div>
           </div>

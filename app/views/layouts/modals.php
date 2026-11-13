@@ -132,11 +132,46 @@ declare(strict_types=1);
       </div>
 
       <div class="form-group">
-        <label for="signup-role">I want to join as</label>
-        <select id="signup-role" name="role" required>
-          <option value="volunteer">Volunteer (Find and join opportunities)</option>
-          <option value="organization">Organization (Publish opportunities and verify hours)</option>
-        </select>
+        <label for="signup-role-input">I want to join as</label>
+        <div class="custom-role-dropdown" id="signup-role-dropdown">
+          <button type="button" class="role-dropdown-trigger" onclick="toggleRoleDropdown('signup-role-dropdown'); event.stopPropagation();" aria-haspopup="listbox" aria-expanded="false">
+            <div class="role-trigger-left">
+              <div class="role-icon-box" id="signup-role-icon">
+                <i data-lucide="user"></i>
+              </div>
+              <div class="role-trigger-text">
+                <span class="role-title" id="signup-role-title">Volunteer</span>
+                <span class="role-desc" id="signup-role-desc">Find and join opportunities</span>
+              </div>
+            </div>
+            <i data-lucide="chevron-down" class="role-chevron"></i>
+          </button>
+          <input type="hidden" name="role" id="signup-role-input" value="volunteer">
+
+          <div class="role-dropdown-menu" role="listbox">
+            <div class="role-dropdown-option selected" data-role="volunteer" onclick="selectRole('signup-role-dropdown', 'volunteer', 'Volunteer', 'Find and join opportunities', 'user')" role="option" aria-selected="true">
+              <div class="role-option-icon">
+                <i data-lucide="user"></i>
+              </div>
+              <div class="role-option-info">
+                <span class="role-option-title">Volunteer</span>
+                <span class="role-option-desc">Find and join opportunities</span>
+              </div>
+              <i data-lucide="check" class="role-check-icon"></i>
+            </div>
+
+            <div class="role-dropdown-option" data-role="organization" onclick="selectRole('signup-role-dropdown', 'organization', 'Organization', 'Publish opportunities and verify hours', 'building-2')" role="option" aria-selected="false">
+              <div class="role-option-icon">
+                <i data-lucide="building-2"></i>
+              </div>
+              <div class="role-option-info">
+                <span class="role-option-title">Organization</span>
+                <span class="role-option-desc">Publish opportunities and verify hours</span>
+              </div>
+              <i data-lucide="check" class="role-check-icon"></i>
+            </div>
+          </div>
+        </div>
       </div>
 
       <button type="submit" class="btn btn-primary btn-full modal-submit-btn">Sign Up</button>
