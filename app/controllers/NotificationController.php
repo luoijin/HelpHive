@@ -23,8 +23,7 @@ final class NotificationController
         $notifModel = new NotificationModel(Database::connection());
         $notifModel->markAsRead($id, (int) $user['id']);
 
-        header('Location: /notifications');
-        exit;
+        redirect('/notifications');
     }
 
     /** POST /notifications/read-all */
@@ -35,7 +34,6 @@ final class NotificationController
         $notifModel->markAllAsRead((int) $user['id']);
 
         Flash::success('All notifications marked as read.');
-        header('Location: /notifications');
-        exit;
+        redirect('/notifications');
     }
 }

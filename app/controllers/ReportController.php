@@ -40,8 +40,7 @@ final class ReportController
         $org = (new OrganizationModel(Database::connection()))->findByUserId((int) $user['id']);
         if (!$org) {
             Flash::error('Organization profile not found.');
-            header('Location: /org/dashboard');
-            exit;
+            redirect('/org/dashboard');
         }
         $rows = (new HourModel(Database::connection()))->reportRows((int) $org['id'], $_GET['from'] ?? null, $_GET['to'] ?? null);
         PdfExporter::download($rows, (string) $org['name'], 'helphive-report-' . date('Ymd') . '.pdf');

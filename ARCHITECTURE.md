@@ -113,7 +113,7 @@ Enforcement order inside each protected action:
 2. Ownership check: the organization id is derived from the session user (`OrganizationModel::idForUser`) and then used in the SQL `WHERE` clause (`organization_id = :oid`) or compared to the record before it is shown.
 3. State check inside the model (capacity, deadline, attendance state, verification state).
 
-The role is stored in the session. If an administrator changes a user's role or deactivates a user, an already open session keeps working until it ends (see `docs/KNOWN_GAPS.md`).
+The session user is re-verified against the database in real time during `Auth::boot()` and `Auth::requireLogin()` (G-23). If an administrator deactivates a user, their session is destroyed immediately; if their role or profile changes, it synchronizes automatically.
 
 ## 6. Business invariants and where they are enforced
 
@@ -121,13 +121,16 @@ The role is stored in the session. If an administrator changes a user's role or 
 |---|---|---|---|
 | Unverified hours never count as verified | `chk_ah_verified` CHECK | Every total and report query filters `verification_status = 'verified'` | Views show verified and pending totals as separate figures |
 | Hours can be verified only after Present | none | `HourModel::verify` requires `attendance_status = 'present'` | Flash error explains the rule |
+| Verified hours upper bound | none | `HourModel::verify` | `AttendanceController` enforces `0 < hours_verified <= 24` (G-29) |
+| Claim hours range agreement | none | `HourModel::claimHours` | `VolunteerController` enforces `0.5 <= hours <= 24` (G-30) |
 | Organizations touch only their own data | FKs | `WHERE o.organization_id = :oid` in `HourModel` and `OpportunityModel` | Ownership comparison in `edit`, `index` (attendance) |
 | No duplicate registration | `UNIQUE(opportunity_id, volunteer_id)` | `RegistrationModel::register` maps SQLSTATE 23000 to `duplicate` | Flash info and redirect |
 | Capacity limit | none | Transaction, `SELECT ... FOR UPDATE` on the opportunity row, count of `registered` rows | Flash error when full |
 | Registration deadline | `chk_opp_dates` (deadline <= start) | Compares `NOW` to `registration_deadline` | Flash error |
 | Only published opportunities accept registration | none | `status = 'published'` check | Flash error |
-| Valid event dates | `chk_opp_dates`, `chk_opp_capacity` | none | none (see gaps) |
+| Valid event dates | `chk_opp_dates`, `chk_opp_capacity` | `validateOpportunityInput` checks required, length, capacity, date order | `OrgOpportunityController` (G-10) |
 | Admin approval of organizations | `organizations.is_approved` | `OrganizationModel::approve` / `reject` | `AdminController` |
+| Admin self-deactivation blocked | none | none | `AdminController::toggleUser` blocks self-deactivation (G-24) |
 
 ## 7. Security controls
 
@@ -140,9 +143,13 @@ The role is stored in the session. If an administrator changes a user's role or 
 | Session id regeneration on login | Implemented | `Auth::login` |
 | HttpOnly and SameSite cookies | Implemented | `Auth::boot` |
 | Role checks on every protected action | Implemented | Controllers |
+| Real-time session deactivation & role sync | Implemented | `Auth::checkSessionUser` (G-23) |
 | CSV formula-injection guard | Implemented | `CsvExporter` |
-| Login rate limiting | Not implemented | see gaps |
-| Email format validation, password strength beyond length 8 | Not implemented | see gaps |
+| Login rate limiting and temporary lockout | Implemented | `AuthController@login` (G-21) |
+| Email format validation, lowercase lookup | Implemented | `AuthController`, `UserModel` (G-21) |
+| Password complexity & confirmation match | Implemented | `AuthController@register`, views (G-22) |
+| Global exception handling & 500 error page | Implemented | `public/index.php`, `app/views/errors/500.php` (G-26) |
+| Deterministic routes and URL building | Implemented | `app/utils/helpers.php` (`url()`, `redirect()`) (G-25) |
 
 ## 8. Frontend architecture
 

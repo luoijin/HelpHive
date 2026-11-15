@@ -25,20 +25,24 @@ final class OrgProfileController
 
         if (!$org) {
             Flash::error('Organization profile not found.');
-            header('Location: /org/dashboard');
-            exit;
+            redirect('/org/dashboard');
+        }
+
+        $contactEmail = strtolower(trim($_POST['email'] ?? $org['contact_email']));
+        if ($contactEmail !== '' && !filter_var($contactEmail, FILTER_VALIDATE_EMAIL)) {
+            Flash::error('Please enter a valid contact email address.');
+            redirect('/org/profile');
         }
 
         $orgModel->update(
             (int) $org['id'],
             trim($_POST['organization_name'] ?? $org['name']),
             trim($_POST['description'] ?? $org['description']),
-            trim($_POST['email'] ?? $org['contact_email']),
+            $contactEmail,
             trim($_POST['location'] ?? $org['location'])
         );
 
         Flash::success('Organization profile updated successfully.');
-        header('Location: /org/dashboard');
-        exit;
+        redirect('/org/dashboard');
     }
 }

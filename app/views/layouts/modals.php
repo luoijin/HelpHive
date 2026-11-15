@@ -127,8 +127,13 @@ declare(strict_types=1);
       </div>
 
       <div class="form-group">
-        <label for="signup-password">Password</label>
-        <input type="password" id="signup-password" name="password" minlength="8" required placeholder="Create a password (min 8 chars)">
+        <label for="signup-password">Password*</label>
+        <input type="password" id="signup-password" name="password" minlength="8" required placeholder="Minimum 8 characters (letters and numbers)">
+      </div>
+
+      <div class="form-group">
+        <label for="signup-password-confirm">Confirm Password*</label>
+        <input type="password" id="signup-password-confirm" name="password_confirmation" minlength="8" required placeholder="Re-enter your password">
       </div>
 
       <div class="form-group">

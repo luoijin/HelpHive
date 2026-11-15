@@ -14,8 +14,7 @@ final class RegistrationController
         if (!$opp) {
             http_response_code(404);
             Flash::error('Opportunity not found or no longer open.');
-            header('Location: /opportunities');
-            exit;
+            redirect('/opportunities');
         }
 
         // Prevent organizers from registering for their own opportunity
@@ -23,16 +22,14 @@ final class RegistrationController
             $orgId = (new OrganizationModel(Database::connection()))->idForUser((int) $user['id']);
             if ((int) $opp['organization_id'] === $orgId) {
                 Flash::error('You cannot register for an opportunity hosted by your own organization.');
-                header('Location: /opportunities/' . $id);
-                exit;
+                redirect('/opportunities/' . $id);
             }
         }
 
         // Check registration deadline
         if (new DateTime() > new DateTime($opp['registration_deadline'])) {
             Flash::error('The registration deadline for this opportunity has passed.');
-            header('Location: /opportunities/' . $id);
-            exit;
+            redirect('/opportunities/' . $id);
         }
 
         // Check capacity
@@ -40,8 +37,7 @@ final class RegistrationController
         $regCount = $regModel->countRegisteredForOpportunity($id);
         if ($regCount >= (int) $opp['capacity']) {
             Flash::error('This opportunity has reached maximum capacity.');
-            header('Location: /opportunities/' . $id);
-            exit;
+            redirect('/opportunities/' . $id);
         }
 
         view('opportunities/register', [
@@ -63,8 +59,7 @@ final class RegistrationController
             $orgId = (new OrganizationModel(Database::connection()))->idForUser((int) $user['id']);
             if ($opp && (int) $opp['organization_id'] === $orgId) {
                 Flash::error('You cannot register for an opportunity hosted by your own organization.');
-                header('Location: /opportunities/' . $id);
-                exit;
+                redirect('/opportunities/' . $id);
             }
         }
 
@@ -106,24 +101,20 @@ final class RegistrationController
 
             case 'duplicate':
                 Flash::info('You are already registered for this opportunity.');
-                header('Location: /volunteer/registrations');
-                exit;
+                redirect('/volunteer/registrations');
 
             case 'full':
                 Flash::error('This opportunity has reached maximum capacity.');
-                header('Location: /opportunities/' . $id);
-                exit;
+                redirect('/opportunities/' . $id);
 
             case 'deadline':
                 Flash::error('The registration deadline for this opportunity has passed.');
-                header('Location: /opportunities/' . $id);
-                exit;
+                redirect('/opportunities/' . $id);
 
             case 'closed':
             default:
                 Flash::error('This opportunity is no longer open for registrations.');
-                header('Location: /opportunities/' . $id);
-                exit;
+                redirect('/opportunities/' . $id);
         }
     }
 
@@ -163,7 +154,6 @@ final class RegistrationController
             Flash::error('Could not cancel this registration. Verified registrations cannot be cancelled.');
         }
 
-        header('Location: /volunteer/registrations');
-        exit;
+        redirect('/volunteer/registrations');
     }
 }

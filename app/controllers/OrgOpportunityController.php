@@ -13,8 +13,7 @@ final class OrgOpportunityController
         $org = (new OrganizationModel(Database::connection()))->findByUserId((int) $user['id']);
         if (!$org) {
             Flash::error('Organization profile not found.');
-            header('Location: /org/dashboard');
-            exit;
+            redirect('/org/dashboard');
         }
         return $org;
     }
@@ -131,8 +130,7 @@ final class OrgOpportunityController
         $validation = $this->validateOpportunityInput($_POST, $orgId, $isApproved);
         if ($validation['error'] !== null) {
             Flash::error($validation['error']);
-            header('Location: /org/opportunities/create');
-            exit;
+            redirect('/org/opportunities/create');
         }
 
         $data = $validation['data'];
@@ -150,12 +148,10 @@ final class OrgOpportunityController
         } catch (\PDOException $e) {
             error_log('Database error in OrgOpportunityController@store: ' . $e->getMessage());
             Flash::error('Could not create opportunity due to a database constraint error.');
-            header('Location: /org/opportunities/create');
-            exit;
+            redirect('/org/opportunities/create');
         }
 
-        header('Location: /org/opportunities');
-        exit;
+        redirect('/org/opportunities');
     }
 
     /** GET /org/opportunities/{id}/edit */
@@ -173,8 +169,7 @@ final class OrgOpportunityController
 
         if (in_array($opp['status'], ['cancelled', 'completed'], true)) {
             Flash::error('Cancelled or completed opportunities cannot be edited.');
-            header('Location: /org/opportunities');
-            exit;
+            redirect('/org/opportunities');
         }
 
         $regModel = new RegistrationModel(Database::connection());
@@ -204,8 +199,7 @@ final class OrgOpportunityController
 
         if (in_array($existingOpp['status'], ['cancelled', 'completed'], true)) {
             Flash::error('Cancelled or completed opportunities cannot be edited.');
-            header('Location: /org/opportunities');
-            exit;
+            redirect('/org/opportunities');
         }
 
         $regModel = new RegistrationModel(Database::connection());
@@ -214,28 +208,24 @@ final class OrgOpportunityController
         $requestedCapacity = (int) ($_POST['capacity'] ?? 0);
         if ($requestedCapacity < $registeredCount) {
             Flash::error("Volunteer capacity cannot be reduced below the number of currently registered volunteers ({$registeredCount}).");
-            header('Location: /org/opportunities/' . $id . '/edit');
-            exit;
+            redirect('/org/opportunities/' . $id . '/edit');
         }
 
         $requestedStatus = trim($_POST['status'] ?? 'draft');
         if (!in_array($requestedStatus, ['draft', 'published'], true)) {
             Flash::error('Invalid status transition. Opportunities can only be saved as draft or published via the form. Use the Cancel action to cancel an event.');
-            header('Location: /org/opportunities/' . $id . '/edit');
-            exit;
+            redirect('/org/opportunities/' . $id . '/edit');
         }
 
         if ($existingOpp['status'] === 'published' && $requestedStatus === 'draft' && $registeredCount > 0) {
             Flash::error('Cannot revert opportunity to draft status while volunteers are registered.');
-            header('Location: /org/opportunities/' . $id . '/edit');
-            exit;
+            redirect('/org/opportunities/' . $id . '/edit');
         }
 
         $validation = $this->validateOpportunityInput($_POST, $orgId, $isApproved);
         if ($validation['error'] !== null) {
             Flash::error($validation['error']);
-            header('Location: /org/opportunities/' . $id . '/edit');
-            exit;
+            redirect('/org/opportunities/' . $id . '/edit');
         }
 
         $data = $validation['data'];
@@ -251,12 +241,10 @@ final class OrgOpportunityController
         } catch (\PDOException $e) {
             error_log('Database error in OrgOpportunityController@update: ' . $e->getMessage());
             Flash::error('Could not update opportunity due to a database constraint error.');
-            header('Location: /org/opportunities/' . $id . '/edit');
-            exit;
+            redirect('/org/opportunities/' . $id . '/edit');
         }
 
-        header('Location: /org/opportunities');
-        exit;
+        redirect('/org/opportunities');
     }
 
     /** POST /org/opportunities/{id}/publish */
@@ -269,16 +257,14 @@ final class OrgOpportunityController
 
         if (!$isApproved) {
             Flash::error('Your organization must be approved by an administrator before publishing opportunities.');
-            header('Location: /org/opportunities');
-            exit;
+            redirect('/org/opportunities');
         }
 
         $oppModel = new OpportunityModel(Database::connection());
         $oppModel->setStatus($id, $orgId, 'published');
 
         Flash::success('Opportunity published! It is now visible to volunteers.');
-        header('Location: /org/opportunities');
-        exit;
+        redirect('/org/opportunities');
     }
 
     /** POST /org/opportunities/{id}/cancel */
@@ -304,8 +290,7 @@ final class OrgOpportunityController
         }
 
         Flash::info('Opportunity marked as cancelled.');
-        header('Location: /org/opportunities');
-        exit;
+        redirect('/org/opportunities');
     }
 
     /** POST /org/opportunities/{id}/delete */
@@ -318,7 +303,6 @@ final class OrgOpportunityController
         $oppModel->deleteDraft($id, $orgId);
 
         Flash::success('Draft opportunity deleted.');
-        header('Location: /org/opportunities');
-        exit;
+        redirect('/org/opportunities');
     }
 }

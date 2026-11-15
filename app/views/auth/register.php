@@ -38,7 +38,12 @@ $requestedRole = $_GET['role'] ?? 'volunteer';
 
         <div class="form-group">
           <label for="page-reg-password">Password*</label>
-          <input type="password" id="page-reg-password" name="password" minlength="8" required placeholder="Minimum 8 characters">
+          <input type="password" id="page-reg-password" name="password" minlength="8" required placeholder="Minimum 8 characters (letters and numbers)">
+        </div>
+
+        <div class="form-group">
+          <label for="page-reg-password-confirm">Confirm Password*</label>
+          <input type="password" id="page-reg-password-confirm" name="password_confirmation" minlength="8" required placeholder="Re-enter your password">
         </div>
 
         <div class="form-group">

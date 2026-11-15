@@ -13,6 +13,21 @@ function asset(string $path): string
     return '/' . ltrim($path, '/');
 }
 
+/** Build a URL, taking into account any base path or subfolder if configured. */
+function url(string $path = ''): string
+{
+    $base = rtrim((string) env('APP_URL', ''), '/');
+    $cleanPath = '/' . ltrim($path, '/');
+    return $base !== '' ? $base . $cleanPath : $cleanPath;
+}
+
+/** Perform a redirect to a given application path and terminate execution. */
+function redirect(string $path, int $status = 302): void
+{
+    header('Location: ' . url($path), true, $status);
+    exit;
+}
+
 /** Render a partial view directly without layout wrapper. */
 function render(string $view, array $data = []): void
 {

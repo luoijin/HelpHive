@@ -36,14 +36,17 @@ final class AttendanceController
     {
         $user = Auth::requireRole(Auth::ORGANIZATION);
         $orgId = $this->getOrgId($user);
-        $status = $_POST['attendance_status'] ?? 'present';
-
-        if (!in_array($status, ['present', 'absent', 'excused', 'pending'], true)) {
-            $status = 'present';
-        }
+        $status = $_POST['attendance_status'] ?? '';
 
         $regModel = new RegistrationModel(Database::connection());
         $reg = $regModel->findById($id);
+        $oppId = $reg ? (int) $reg['opportunity_id'] : 0;
+        $redirectUrl = $oppId > 0 ? "/org/opportunities/{$oppId}/attendance" : '/org/opportunities';
+
+        if (!in_array($status, ['present', 'absent', 'excused', 'pending'], true)) {
+            Flash::error('Invalid attendance status provided. Allowed values: Present, Absent, Excused, Pending.');
+            redirect($redirectUrl);
+        }
 
         $hourModel = new HourModel(Database::connection());
         $updated = $hourModel->markAttendance($id, $orgId, $status);
@@ -64,8 +67,7 @@ final class AttendanceController
             Flash::error('Cannot update attendance for verified records.');
         }
 
-        header('Location: ' . ($_SERVER['HTTP_REFERER'] ?? '/org/opportunities'));
-        exit;
+        redirect($redirectUrl);
     }
 
     /** POST /org/hours/{id}/verify — Verify hours for registration {id} */
@@ -75,14 +77,15 @@ final class AttendanceController
         $orgId = $this->getOrgId($user);
         $hours = (float) ($_POST['hours_verified'] ?? 0);
 
-        if ($hours <= 0) {
-            Flash::error('Verified hours must be greater than zero.');
-            header('Location: ' . ($_SERVER['HTTP_REFERER'] ?? '/org/opportunities'));
-            exit;
-        }
-
         $regModel = new RegistrationModel(Database::connection());
         $reg = $regModel->findById($id);
+        $oppId = $reg ? (int) $reg['opportunity_id'] : 0;
+        $redirectUrl = $oppId > 0 ? "/org/opportunities/{$oppId}/attendance" : '/org/opportunities';
+
+        if ($hours <= 0 || $hours > 24) {
+            Flash::error('Verified hours must be greater than zero and at most 24 hours.');
+            redirect($redirectUrl);
+        }
 
         $hourModel = new HourModel(Database::connection());
         $verified = $hourModel->verify($id, $orgId, (int) $user['id'], $hours);
@@ -98,13 +101,18 @@ final class AttendanceController
                     '/volunteer/hours'
                 );
             }
-            Flash::success("Successfully verified {$hours} service hours!");
+
+            $claimed = isset($reg['hours_claimed']) ? (float) $reg['hours_claimed'] : null;
+            if ($claimed !== null && $claimed > 0 && abs($hours - $claimed) > 0.001) {
+                Flash::info("Successfully verified {$hours} service hours. (Note: Verified hours differ from volunteer claimed hours of {$claimed} hrs).");
+            } else {
+                Flash::success("Successfully verified {$hours} service hours!");
+            }
         } else {
             Flash::error('Could not verify hours. Ensure volunteer attendance is marked as Present.');
         }
 
-        header('Location: ' . ($_SERVER['HTTP_REFERER'] ?? '/org/opportunities'));
-        exit;
+        redirect($redirectUrl);
     }
 
     /** POST /org/hours/{id}/reject — Reject claimed hours */
@@ -115,6 +123,8 @@ final class AttendanceController
 
         $regModel = new RegistrationModel(Database::connection());
         $reg = $regModel->findById($id);
+        $oppId = $reg ? (int) $reg['opportunity_id'] : 0;
+        $redirectUrl = $oppId > 0 ? "/org/opportunities/{$oppId}/attendance" : '/org/opportunities';
 
         $hourModel = new HourModel(Database::connection());
         $rejected = $hourModel->reject($id, $orgId);
@@ -135,7 +145,6 @@ final class AttendanceController
             Flash::error('Could not reject hours. Only unverified or pending hours can be rejected.');
         }
 
-        header('Location: ' . ($_SERVER['HTTP_REFERER'] ?? '/org/opportunities'));
-        exit;
+        redirect($redirectUrl);
     }
 }

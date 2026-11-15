@@ -50,30 +50,32 @@ How ownership is checked per area:
 
 | Endpoint | Field | Rule applied | Failure behavior |
 |---|---|---|---|
-| `POST /register` | email | non-empty, unique | Flash error; duplicate redirects to `/login` |
-| | password | length >= 8 | Flash error, redirect `/register` |
+| `POST /register` | email | non-empty, valid email format (`filter_var`), unique, normalized to lowercase (G-21) | Flash error; duplicate redirects to `/login` |
+| | password | length >= 8, containing both letters and numbers; must match `password_confirmation` (G-22) | Flash error, redirect `/register` |
 | | first and last name | combined non-empty | Flash error, redirect `/register` |
-| | role | whitelist `volunteer` or `organization`, else `volunteer` | Silent coercion |
+| | role | whitelist `volunteer` or `organization`, else `volunteer` | Coerced to `volunteer` |
 | `POST /org/register` | organization_name, location, description | non-empty | Flash error, redirect `/register?role=organization` |
+| | contact email | valid email format if provided | Flash error, redirect `/register?role=organization` |
 | | session user | must exist | Flash error, redirect `/login` |
 | | one organization per user | `findByUserId` | Flash info, redirect `/org/dashboard` |
-| `POST /login` | email, password | `findByEmail` then `password_verify` | Generic error message |
-| | is_active | must be 1 | "Account deactivated" message |
-| `POST /opportunities/{id}/register` | role | volunteer only | 403 |
+| `POST /login` | email, password | `findByEmail` (case-insensitive) then `password_verify` | Generic error message (G-21) |
+| | rate limit | maximum 5 failed attempts per IP + email combination | 15-minute temporary lockout (G-21) |
+| | is_active | must be 1; session checked in real time via `Auth::checkSessionUser` (G-23) | "Account deactivated" message, session destroyed |
+| `POST /opportunities/{id}/register` | role | volunteer or organization (dual capacity outside own org) | 403 or flash error |
 | | opportunity status | must be `published` | `closed` result, flash error |
 | | deadline | now must not be after `registration_deadline` | `deadline` result |
 | | capacity | count of `registered` rows must be below `capacity` | `full` result |
 | | duplicate | `UNIQUE(opportunity_id, volunteer_id)` | `duplicate` result |
-| `POST /volunteer/hours/{id}/claim` | hours | greater than 0 and at most 24 | Flash error |
+| `POST /volunteer/hours/{id}/claim` | hours | between 0.5 and 24 (G-30) | Flash error |
 | | record | must belong to the volunteer, state `unverified`, `pending`, or `rejected` | "Could not claim hours" |
-| `POST /org/attendance/{id}` | attendance_status | whitelist `present`, `absent`, `excused`, `pending`; invalid value becomes `present` | Silent coercion |
-| `POST /org/hours/{id}/verify` | hours_verified | greater than 0 | Flash error |
+| `POST /org/attendance/{id}` | attendance_status | whitelist `present`, `absent`, `excused`, `pending` | Rejects invalid values with flash error (no silent coercion) (G-28) |
+| `POST /org/hours/{id}/verify` | hours_verified | greater than 0 and at most 24 (G-29) | Flash error |
 | | state | attendance must be `present`; state `unverified` or `pending` | "Could not verify hours" |
 | `POST /org/hours/{id}/reject` | record | must belong to the organization | "Could not reject hours" |
-| `POST /org/opportunities/create` and `/edit` | all fields | `trim` only; defaults applied for missing values | Database CHECK or ENUM errors surface as exceptions (gap) |
-| `GET /opportunities` | keyword, cause, location | passed as bound parameters; `distance` accepted but not used by SQL | No error |
-| `GET /org/reports*` | from, to | passed as bound parameters; format not validated | Empty or unexpected results |
-| `POST /admin/*` | id | numeric from router; admin role | No row updated if id unknown |
+| `POST /org/opportunities/create` and `/edit` | all fields | validate title, dates, capacity, status | Server-side validation with friendly flash errors (G-10) |
+| `GET /opportunities` | keyword, cause, location, dates | bound parameters with LIKE wildcard escaping | Clean listing or empty-state |
+| `GET /org/reports*` | from, to | passed as bound parameters | Filtered report |
+| `POST /admin/users/{id}/toggle` | id | numeric from router; admin role; self-deactivation blocked (G-24) | Rejection flash error if self |
 
 ## 4. HTTP status and outcome map
 
@@ -87,7 +89,7 @@ How ownership is checked per area:
 | Validation failure on a form | 302 back to the form with a Flash error |
 | Successful POST | 302 (post-redirect-get) with a Flash success or info message |
 | Registration success | 200 renders `opportunities/confirmed` |
-| Unhandled PDO exception | PHP error (no friendly page yet) |
+| Unhandled exception / Error | 500 with custom error page (`app/views/errors/500.php`), debug trace in local mode only (G-26) |
 
 ## 5. Hour-integrity validation (the critical rule)
 

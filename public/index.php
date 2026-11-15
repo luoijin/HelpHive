@@ -16,11 +16,30 @@ spl_autoload_register(function (string $class): void {
 });
 if (is_file(BASE_PATH . '/vendor/autoload.php')) { require BASE_PATH . '/vendor/autoload.php'; }
 
+// Global Exception Handler (G-26)
+set_exception_handler(function (Throwable $e): void {
+    error_log((string) $e);
+    http_response_code(500);
+    $isLocal = strtolower((string) env('APP_ENV', 'local')) === 'local';
+    $viewPath = BASE_PATH . '/app/views/errors/500.php';
+    if (file_exists($viewPath)) {
+        require $viewPath;
+    } else {
+        echo '<h1>500 Internal Server Error</h1>';
+        if ($isLocal) {
+            echo '<pre>' . htmlspecialchars((string) $e, ENT_QUOTES, 'UTF-8') . '</pre>';
+        } else {
+            echo '<p>An unexpected error occurred. Please try again later.</p>';
+        }
+    }
+    exit;
+});
+
 Auth::boot();
 $routes = require BASE_PATH . '/config/routes.php';
 
-$method = $_SERVER['REQUEST_METHOD'];
-$path = '/' . trim(parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH), '/');
+$method = $_SERVER['REQUEST_METHOD'] ?? 'GET';
+$path = '/' . trim((string) parse_url($_SERVER['REQUEST_URI'] ?? '/', PHP_URL_PATH), '/');
 
 if ($method === 'POST') { Csrf::verify(); }
 

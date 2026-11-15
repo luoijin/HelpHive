@@ -84,9 +84,7 @@ final class VolunteerController
         }
 
         Flash::success('Opportunity saved to your bookmarks!');
-        $referer = $_SERVER['HTTP_REFERER'] ?? '/opportunities/' . $id;
-        header('Location: ' . $referer);
-        exit;
+        redirect('/opportunities/' . $id);
     }
 
     /** POST /opportunities/{id}/unsave */
@@ -106,9 +104,7 @@ final class VolunteerController
         }
 
         Flash::info('Opportunity removed from saved bookmarks.');
-        $referer = $_SERVER['HTTP_REFERER'] ?? '/volunteer/saved';
-        header('Location: ' . $referer);
-        exit;
+        redirect('/volunteer/saved');
     }
 
     /** POST /volunteer/hours/{id}/claim */
@@ -117,10 +113,9 @@ final class VolunteerController
         $user = Auth::requireRole(Auth::VOLUNTEER, Auth::ORGANIZATION);
         $hours = (float) ($_POST['hours'] ?? 0);
 
-        if ($hours <= 0 || $hours > 24) {
+        if ($hours < 0.5 || $hours > 24) {
             Flash::error('Please enter a valid hour claim between 0.5 and 24 hours.');
-            header('Location: /volunteer/hours');
-            exit;
+            redirect('/volunteer/hours');
         }
 
         $hourModel = new HourModel(Database::connection());
@@ -132,7 +127,6 @@ final class VolunteerController
             Flash::error('Could not claim hours. Ensure the event has started, your registration is active, and attendance is not marked absent.');
         }
 
-        header('Location: /volunteer/hours');
-        exit;
+        redirect('/volunteer/hours');
     }
 }

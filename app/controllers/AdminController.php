@@ -38,12 +38,16 @@ final class AdminController
     public function toggleUser(int $id): void
     {
         Auth::requireRole(Auth::ADMIN);
+        if ($id === (int) Auth::id()) {
+            Flash::error('You cannot deactivate your own administrator account.');
+            redirect('/admin/users');
+        }
+
         $userModel = new UserModel(Database::connection());
         $userModel->toggleActive($id);
 
         Flash::info('User account status updated.');
-        header('Location: /admin/users');
-        exit;
+        redirect('/admin/users');
     }
 
     /** GET /admin/organizations */
@@ -68,6 +72,9 @@ final class AdminController
         $approved = $orgModel->approve($id);
 
         if ($approved && $org && !empty($org['user_id'])) {
+            $userModel = new UserModel(Database::connection());
+            $userModel->updateRole((int) $org['user_id'], Auth::ORGANIZATION);
+
             $notifModel = new NotificationModel(Database::connection());
             $notifModel->notify(
                 (int) $org['user_id'],
@@ -78,8 +85,7 @@ final class AdminController
         }
 
         Flash::success('Organization approved successfully.');
-        header('Location: /admin/organizations');
-        exit;
+        redirect('/admin/organizations');
     }
 
     /** POST /admin/organizations/{id}/reject */
@@ -91,17 +97,19 @@ final class AdminController
         $rejected = $orgModel->reject($id);
 
         if ($rejected && $org && !empty($org['user_id'])) {
+            $userModel = new UserModel(Database::connection());
+            $userModel->updateRole((int) $org['user_id'], Auth::VOLUNTEER);
+
             $notifModel = new NotificationModel(Database::connection());
             $notifModel->notify(
                 (int) $org['user_id'],
                 'organization',
-                "Your organization registration for '{$org['name']}' was rejected or unapproved by an administrator.",
-                '/org/dashboard'
+                "Your organization registration for '{$org['name']}' was rejected by an administrator. Your account role has reverted to volunteer.",
+                '/volunteer/dashboard'
             );
         }
 
-        Flash::info('Organization status set to unapproved/rejected.');
-        header('Location: /admin/organizations');
-        exit;
+        Flash::info('Organization status set to unapproved/rejected and user role reverted to volunteer.');
+        redirect('/admin/organizations');
     }
 }

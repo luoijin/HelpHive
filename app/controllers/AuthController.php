@@ -21,8 +21,7 @@ final class AuthController
             $existingOrg = $orgModel->findByUserId((int) $currentUser['id']);
             if ($existingOrg !== null) {
                 Flash::info('Your organization is already registered.');
-                header('Location: /org/dashboard');
-                exit;
+                redirect('/org/dashboard');
             }
 
             view('org/register', [
@@ -33,8 +32,7 @@ final class AuthController
         }
 
         if ($currentUser !== null) {
-            header('Location: /');
-            exit;
+            redirect('/');
         }
 
         view('auth/register', ['title' => 'Create Account — HelpHive']);
@@ -67,8 +65,7 @@ final class AuthController
             $currentUser = Auth::user();
             if ($currentUser === null) {
                 Flash::error('You must be logged in to register an organization. Please log in or create an account first.');
-                header('Location: /login');
-                exit;
+                redirect('/login');
             }
 
             $orgName = trim($_POST['organization_name'] ?? '');
@@ -79,19 +76,22 @@ final class AuthController
             $userModel = new UserModel(Database::connection());
             $userRecord = $userModel->findById((int) $currentUser['id']);
             $defaultEmail = $userRecord['email'] ?? '';
-            $contactEmail = trim($_POST['email'] ?? $defaultEmail);
+            $contactEmail = strtolower(trim($_POST['email'] ?? $defaultEmail));
+
+            if ($contactEmail !== '' && !filter_var($contactEmail, FILTER_VALIDATE_EMAIL)) {
+                Flash::error('Please enter a valid organization contact email address.');
+                redirect('/register?role=organization');
+            }
 
             if ($orgName === '' || $location === '' || $description === '') {
                 Flash::error('Please fill in all required organization fields.');
-                header('Location: /register?role=organization');
-                exit;
+                redirect('/register?role=organization');
             }
 
             $orgModel = new OrganizationModel(Database::connection());
             if ($orgModel->findByUserId((int) $currentUser['id']) !== null) {
                 Flash::info('You have already registered an organization.');
-                header('Location: /org/dashboard');
-                exit;
+                redirect('/org/dashboard');
             }
 
             $fullDesc = ($orgType ? "[Type: {$orgType}] " : '') . ($causeArea ? "[Cause: {$causeArea}] " : '') . $description;
@@ -113,28 +113,41 @@ final class AuthController
             }
 
             Flash::success('Organization submitted successfully! Awaiting administrator approval.');
-            header('Location: /org/dashboard');
-            exit;
+            redirect('/org/dashboard');
         }
 
         // Standard account registration (Guest)
-        $email = trim($_POST['email'] ?? '');
+        $email = strtolower(trim($_POST['email'] ?? ''));
         $password = $_POST['password'] ?? '';
+        $passwordConfirmation = $_POST['password_confirmation'] ?? ($_POST['confirm_password'] ?? '');
         $firstName = trim($_POST['first_name'] ?? '');
         $lastName = trim($_POST['last_name'] ?? '');
         $fullName = trim($firstName . ' ' . $lastName);
 
-        if ($email === '' || strlen($password) < 8 || $fullName === '') {
-            Flash::error('Please fill in all required fields. Password must be at least 8 characters.');
-            header('Location: /register');
-            exit;
+        if ($email === '' || $fullName === '' || $password === '') {
+            Flash::error('Please fill in all required fields.');
+            redirect('/register');
+        }
+
+        if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
+            Flash::error('Please enter a valid email address.');
+            redirect('/register');
+        }
+
+        if (strlen($password) < 8 || !preg_match('/[A-Za-z]/', $password) || !preg_match('/[0-9]/', $password)) {
+            Flash::error('Password must be at least 8 characters long and contain both letters and numbers.');
+            redirect('/register');
+        }
+
+        if ($passwordConfirmation === '' || $password !== $passwordConfirmation) {
+            Flash::error('Passwords do not match. Please verify your password confirmation.');
+            redirect('/register');
         }
 
         $userModel = new UserModel(Database::connection());
         if ($userModel->findByEmail($email) !== null) {
             Flash::error('An account with this email address already exists. Please log in.');
-            header('Location: /login');
-            exit;
+            redirect('/login');
         }
 
         $hash = password_hash($password, PASSWORD_DEFAULT);
@@ -144,16 +157,14 @@ final class AuthController
         Auth::login($user);
 
         Flash::success('Account created successfully! Welcome to HelpHive.');
-        header('Location: /opportunities');
-        exit;
+        redirect('/opportunities');
     }
 
     /** GET /login */
     public function showLogin(): void
     {
         if (Auth::user()) {
-            header('Location: /');
-            exit;
+            redirect('/');
         }
         view('auth/login', ['title' => 'Log In — HelpHive']);
     }
@@ -161,42 +172,66 @@ final class AuthController
     /** POST /login */
     public function login(): void
     {
-        $email = trim($_POST['email'] ?? '');
+        $email = strtolower(trim($_POST['email'] ?? ''));
         $password = $_POST['password'] ?? '';
+
+        if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
+            Flash::error('Please enter a valid email address.');
+            redirect('/login');
+        }
+
+        // Rate-limiting / lockout check (G-21)
+        $ip = $_SERVER['REMOTE_ADDR'] ?? '127.0.0.1';
+        $lockKey = 'login_lock_' . md5($ip . '_' . $email);
+        $attempts = $_SESSION[$lockKey] ?? ['count' => 0, 'locked_until' => 0];
+
+        if (!empty($attempts['locked_until']) && $attempts['locked_until'] > time()) {
+            $remainingMinutes = (int) ceil(($attempts['locked_until'] - time()) / 60);
+            Flash::error("Too many failed login attempts. Your account is temporarily locked. Please try again in {$remainingMinutes} minute(s).");
+            redirect('/login');
+        }
 
         $userModel = new UserModel(Database::connection());
         $user = $userModel->findByEmail($email);
 
         if ($user === null || !password_verify($password, $user['password_hash'])) {
-            Flash::error('Invalid email or password. Please try again.');
-            header('Location: /login');
-            exit;
+            $attempts['count'] = ($attempts['count'] ?? 0) + 1;
+            if ($attempts['count'] >= 5) {
+                $attempts['locked_until'] = time() + 900; // 15-minute lockout
+                $_SESSION[$lockKey] = $attempts;
+                Flash::error('Too many failed login attempts. Your account is temporarily locked for 15 minutes.');
+            } else {
+                $_SESSION[$lockKey] = $attempts;
+                $remaining = 5 - $attempts['count'];
+                Flash::error("Invalid email or password. ({$remaining} attempts remaining before temporary lockout).");
+            }
+            redirect('/login');
         }
+
+        // Clear failed attempts counter on success
+        unset($_SESSION[$lockKey]);
 
         if (empty($user['is_active'])) {
             Flash::error('Your account has been deactivated. Please contact support.');
-            header('Location: /login');
-            exit;
+            redirect('/login');
         }
 
         Auth::login($user);
         Flash::success('Welcome back, ' . $user['full_name'] . '!');
 
         if ($user['role'] === Auth::ORGANIZATION) {
-            header('Location: /org/dashboard');
+            redirect('/org/dashboard');
         } elseif ($user['role'] === Auth::ADMIN) {
-            header('Location: /admin/dashboard');
+            redirect('/admin/dashboard');
         } else {
-            header('Location: /volunteer/dashboard');
+            redirect('/volunteer/dashboard');
         }
-        exit;
     }
 
     /** POST /logout */
     public function logout(): void
     {
         Auth::logout();
-        header('Location: /');
-        exit;
+        redirect('/');
     }
 }

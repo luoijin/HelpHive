@@ -87,10 +87,12 @@ final class RegistrationModel
 
     public function findById(int $id): ?array
     {
-        $sql = 'SELECT r.*, o.title AS opportunity_title, o.organization_id, org.name AS org_name, org.user_id AS org_user_id
+        $sql = 'SELECT r.*, o.title AS opportunity_title, o.organization_id, org.name AS org_name, org.user_id AS org_user_id,
+                       ah.hours_claimed, ah.hours_verified, ah.attendance_status, ah.verification_status
                 FROM registrations r
                 JOIN opportunities o ON o.id = r.opportunity_id
                 JOIN organizations org ON org.id = o.organization_id
+                LEFT JOIN attendance_and_hours ah ON ah.registration_id = r.id
                 WHERE r.id = :id LIMIT 1';
         $st = $this->db->prepare($sql);
         $st->execute(['id' => $id]);

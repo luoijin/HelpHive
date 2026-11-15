@@ -36,6 +36,16 @@ All P1 items have been addressed and moved to the Resolved section below.
 | G-18 | Dashboard | Organization dashboard "volunteers" figure was `opportunity count * 8` | Replaced hardcoded formula with `RegistrationModel::totalRegisteredForOrg($orgId)`, accurately counting active (`status = 'registered'`) registrations |
 | G-19 | Roles | Registering an organization caused user to lose access to `/volunteer/*` and their volunteer history | Implemented dual capacity policy allowing organization users to access `/volunteer/*` routes and volunteer for community opportunities outside their own organization, and added volunteer links to their profile dropdown |
 | G-20 | Views | `opportunities/register.php` was not rendered by any controller | Wired `opportunities/register.php` (Figma 381:11859) to `GET /opportunities/{id}/register` with capacity, deadline, and ownership checks, pre-populating volunteer account details |
+| G-21 | Login | No rate limiting or lockout; no email format validation; email not lowercased before lookup | Added `filter_var` email validation, normalized email to lowercase on create and lookup, and implemented failed-attempt counter per IP and email (5 attempts before 15-minute temporary lockout) in `AuthController::login` |
+| G-22 | Password | Only a length of 8 was enforced; no confirmation field check on the server; no reset flow | Enforced password complexity (min 8 characters containing letters and numbers), added confirmation field check on server and forms, and documented password reset as out of scope for current sprint (directing to support) |
+| G-23 | Session | Role and `is_active` were read at login and trusted afterwards; a deactivated user kept a working session | Added `Auth::checkSessionUser()` called during `Auth::boot()` and `Auth::requireLogin()` to re-verify `is_active` against database in real time, terminate session for deactivated accounts, and synchronize role changes |
+| G-24 | Admin | An administrator could deactivate their own account; rejecting an organization left the user's role as `organization` | Blocked self-deactivation in `AdminController::toggleUser`; in `AdminController::rejectOrg`, reverted user role to `volunteer` with notification, and ensured role synchronization in `approveOrg` |
+| G-25 | Redirects | Several actions redirected to `$_SERVER['HTTP_REFERER']`; redirects used unmanaged paths | Replaced all `$_SERVER['HTTP_REFERER']` redirects with deterministic fixed routes (e.g. `/org/opportunities/{id}/attendance`), and created `url()` and `redirect()` helpers supporting configurable base paths |
+| G-26 | Errors | Uncaught exceptions were not handled; behavior depended on PHP `display_errors` | Registered global exception handler in `public/index.php` that logs errors, sets HTTP 500, and renders a custom styled `app/views/errors/500.php` page with stack trace details displayed only in local environment (`APP_ENV=local`) |
+| G-27 | Repository | `.gitignore` was empty | Configured `.gitignore` to exclude `.env`, `.env.*`, `/vendor/`, IDE/editor files, caches, and logs while preserving `.env.example` |
+| G-28 | Attendance | An invalid `attendance_status` value was silently changed to `present` | In `AttendanceController::mark`, rejected invalid attendance status values with an error flash message instead of silently coercing to `present` |
+| G-29 | Verify | `verify` accepted any positive hours with no relation to claimed hours or event length | Enforced `0 < hours_verified <= 24` in `AttendanceController::verify` and added an informational note when verified hours differ from volunteer claimed hours |
+| G-30 | Messages | Claim error text said "between 0.5 and 24" but the code accepted any value above 0 up to 24 | Enforced `$hours >= 0.5 && $hours <= 24` in `VolunteerController::claimHours`, aligning server validation rule with view input constraints and error message |
 
 ## P2 - Correct behavior
 
@@ -43,24 +53,4 @@ All P2 items have been addressed and moved to the Resolved section below.
 
 ## P3 - Hardening
 
-| ID | Area | Current behavior | Fix |
-|---|---|---|---|
-| G-21 | Login | No rate limiting or lockout; no email format validation; email not lowercased before lookup | `filter_var($email, FILTER_VALIDATE_EMAIL)`, store and compare lowercase, add a failed-attempt counter per IP and email |
-| G-22 | Password | Only a length of 8 is enforced; no confirmation field check on the server; no reset flow | Add a confirmation match and basic complexity guidance; plan a password reset or document it as out of scope |
-| G-23 | Session | Role and `is_active` are read at login and trusted afterwards; a deactivated user keeps a working session | Re-read the user row in `Auth::boot()` (or on each protected action) and log out inactive users |
-| G-24 | Admin | An administrator can deactivate their own account; rejecting an organization leaves the user's role as `organization` | Block self-deactivation; decide what happens to a rejected organization's role |
-| G-25 | Redirects | Several actions redirect to `$_SERVER['HTTP_REFERER']`; redirects use absolute paths such as `/login` | Redirect to fixed routes (for example `/org/opportunities/{id}/attendance`); build URLs through a helper if the app will ever run in a subfolder |
-| G-26 | Errors | Uncaught exceptions are not handled; behavior depends on PHP `display_errors` | Add a global exception handler that logs the error and renders a generic 500 page; show details only when `APP_ENV=local` |
-| G-27 | Repository | `.gitignore` is empty | Add `.env`, `vendor/`, and editor folders; keep `.env.example` tracked |
-| G-28 | Attendance | An invalid `attendance_status` value is silently changed to `present` | Reject invalid values with an error instead of coercing |
-| G-29 | Verify | `verify` accepts any positive hours (up to the column limit) with no relation to claimed hours or event length | Require `hours_verified <= 24`, and optionally warn when it differs from `hours_claimed` |
-| G-30 | Messages | Claim error text says "between 0.5 and 24" but the code accepts any value above 0 up to 24 | Make the rule and the message agree |
-
-## Suggested fix order
-
-1. G-01, G-02, G-03, G-04 (visibility, approval, PDF export, session)
-2. G-05, G-06, G-07, G-08 (hour-integrity rule)
-3. G-09, G-10, G-11 (registration and opportunity correctness)
-4. G-12, G-13 (notifications and cancellation)
-5. G-14 to G-17 (search and saved)
-6. Remaining P2 and P3 items
+All P3 items have been addressed and moved to the Resolved section above.

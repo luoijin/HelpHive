@@ -93,9 +93,9 @@ flowchart TD
 
 | Action | Effect | Notes |
 |---|---|---|
-| Toggle user | `users.is_active = NOT is_active` | Blocks future logins; an open session is not ended (see gaps). No guard against an administrator deactivating their own account |
-| Approve organization | `organizations.is_approved = 1` | No notification sent yet |
-| Reject organization | `organizations.is_approved = 0` | The user keeps the `organization` role |
+| Toggle user | `users.is_active = NOT is_active` | Blocks future logins; open sessions are immediately terminated via `Auth::checkSessionUser` (G-23). Administrator self-deactivation is strictly blocked (G-24) |
+| Approve organization | `organizations.is_approved = 1` | Sets user role to `organization` and sends in-app notification |
+| Reject organization | `organizations.is_approved = 0` | Reverts user role to `volunteer` (G-24) and sends in-app notification |
 
 Seeded accounts (`database/seed.sql`): one administrator, three organization accounts (Blue Shores Initiative, Green Shift Media, Paws & Care Foundation), and two volunteers. All seeded users share one password hash; use the seed file or generate a new hash with `password_hash()` for local testing.
 

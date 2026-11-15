@@ -7,8 +7,9 @@ final class UserModel
 
     public function findByEmail(string $email): ?array
     {
-        $st = $this->db->prepare('SELECT * FROM users WHERE email = :email LIMIT 1');
-        $st->execute(['email' => $email]);
+        $normalized = strtolower(trim($email));
+        $st = $this->db->prepare('SELECT * FROM users WHERE LOWER(email) = :email LIMIT 1');
+        $st->execute(['email' => $normalized]);
         $row = $st->fetch();
         return $row ?: null;
     }
@@ -23,12 +24,13 @@ final class UserModel
 
     public function create(string $fullName, string $email, string $passwordHash, string $role = 'volunteer'): int
     {
+        $normalized = strtolower(trim($email));
         $st = $this->db->prepare(
             'INSERT INTO users (full_name, email, password_hash, role) VALUES (:name, :email, :hash, :role)'
         );
         $st->execute([
-            'name' => $fullName,
-            'email' => $email,
+            'name' => trim($fullName),
+            'email' => $normalized,
             'hash' => $passwordHash,
             'role' => $role,
         ]);

@@ -47,8 +47,8 @@ Rules applied:
 | Field | Rule |
 |---|---|
 | `first_name` + `last_name` | Joined and trimmed; must not be empty |
-| `email` | Trimmed; must not be empty; must be unique (checked in code and by the `UNIQUE` index) |
-| `password` | Minimum 8 characters; stored only as a hash |
+| `email` | Trimmed, lowercased, and validated with `filter_var(..., FILTER_VALIDATE_EMAIL)`; must be unique (checked in code and by the `UNIQUE` index) |
+| `password` | Minimum 8 characters containing both letters and numbers; must match `password_confirmation`; stored only as a bcrypt hash |
 | `role` | Forced to `volunteer` for this path; the client cannot create an admin |
 
 ## 3. Organization registration (`POST /org/register`)
@@ -148,10 +148,11 @@ sequenceDiagram
 
 | Helper | Behavior |
 |---|---|
-| `Auth::boot()` | Sets cookie params (HttpOnly, SameSite=Lax) and starts the session; called once in `public/index.php` |
+| `Auth::boot()` | Sets cookie params (HttpOnly, SameSite=Lax), starts the session, and re-verifies session user against DB; called once in `public/index.php` |
+| `Auth::checkSessionUser()` | Re-reads user row from database; immediately logs out deactivated users (`is_active = 0`) and synchronizes role and name updates (G-23) |
 | `Auth::login($user)` | Regenerates the session id and stores `id`, `name`, `role` |
 | `Auth::user()` / `Auth::id()` | Read the session user |
-| `Auth::requireLogin()` | Redirects guests to `/login` |
+| `Auth::requireLogin()` | Re-verifies user and redirects guests or deactivated users to `/login` |
 | `Auth::requireRole(...$roles)` | Calls `requireLogin`, then returns 403 if the role is not in the list |
 | `Auth::logout()` | Clears and destroys the session |
 

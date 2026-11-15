@@ -15,6 +15,32 @@ final class Auth
     {
         session_set_cookie_params(['httponly' => true, 'samesite' => 'Lax']);
         session_start();
+        self::checkSessionUser();
+    }
+
+    /**
+     * Re-verify session user against database: terminate session if deactivated
+     * or deleted, and sync current role and name (G-23).
+     */
+    public static function checkSessionUser(): void
+    {
+        if (empty($_SESSION['user']['id'])) {
+            return;
+        }
+
+        try {
+            $userModel = new UserModel(Database::connection());
+            $user = $userModel->findById((int) $_SESSION['user']['id']);
+            if ($user === null || empty($user['is_active'])) {
+                self::logout();
+                return;
+            }
+
+            $_SESSION['user']['name'] = $user['full_name'];
+            $_SESSION['user']['role'] = $user['role'];
+        } catch (Throwable) {
+            // If database is not ready or during CLI bootstrapping, keep existing session
+        }
     }
 
     /**
@@ -51,10 +77,10 @@ final class Auth
     /** Require any authenticated user; redirect guests to /login. */
     public static function requireLogin(): array
     {
+        self::checkSessionUser();
         $user = self::user();
         if ($user === null) {
-            header('Location: /login');
-            exit;
+            redirect('/login');
         }
         return $user;
     }
