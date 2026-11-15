@@ -1,0 +1,57 @@
+# ------------------------------------------------------------
+# HelpHive .gitignore
+# ------------------------------------------------------------
+
+# Environment and secrets (keep .env.example tracked)
+.env
+.env.*
+!.env.example
+
+# Composer dependencies (restore with: composer install)
+/vendor/
+
+# Logs and temporary files
+*.log
+/logs/
+/tmp/
+/storage/logs/
+/storage/cache/
+/storage/sessions/
+
+# Database dumps and local backups (schema.sql and seed.sql stay tracked)
+*.sql.bak
+*.dump
+backup*.sql
+dump*.sql
+
+# Uploaded files created at runtime (if uploads are added later)
+/public/uploads/*
+!/public/uploads/.gitkeep
+
+# PHP tooling caches
+.phpunit.result.cache
+.php-cs-fixer.cache
+.phpstan.cache
+/coverage/
+
+# Node tooling (only if a build step is added later)
+node_modules/
+npm-debug.log*
+
+# Editor and IDE files
+.vscode/
+.idea/
+*.sublime-project
+*.sublime-workspace
+*.swp
+*.swo
+*~
+
+# Operating system files
+.DS_Store
+Thumbs.db
+desktop.ini
+ehthumbs.db
+
+# Laragon local files
+laragon.ini

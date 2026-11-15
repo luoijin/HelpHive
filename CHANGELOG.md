@@ -1,6 +1,15 @@
 # Changelog
 
 ## [Unreleased]
+
+### Documentation
+- Rewrote `ARCHITECTURE.md` to match the current codebase: layers, request lifecycle, roles, invariants and where they are enforced, security controls, frontend structure, repository layout, document map.
+- Regenerated `API_ROUTING.md` from `config/routes.php` (44 routes, access levels, `{id}` meaning per route, route to view map).
+- Updated `DATABASE_SCHEMA.md`: relationship overview, indexing strategy, query rules for hour integrity, transactions, seed data, planned schema changes.
+- Added `docs/ERD.md` (full ERD with attributes, relationship table, four state machines, read/write map).
+- Added flow documents: `docs/FLOW_AUTH.md`, `docs/FLOW_VALIDATION.md`, `docs/FLOW_SEARCH.md`, `docs/FLOW_REGISTRATION_AND_HOURS.md`, `docs/FLOW_ORGANIZATION_AND_ADMIN.md`.
+- Added `docs/KNOWN_GAPS.md` listing 30 differences between intended and current behavior, with priorities and fixes.
+
 ### Added
 - Direct page view redirection on clicking opportunity cards to `/opportunities/{id}` for complete event details.
 - Added "Duration" info box to the Opportunity Details view (`show.php`) and controllers.

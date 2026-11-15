@@ -8,14 +8,17 @@ All queries interact via PHP PDO using prepared statements with `PDO::ATTR_EMULA
 
 ## Entity Relationship Diagram
 
+The full diagram with attributes, state machines, and read/write map is in `docs/ERD.md`. Relationship overview:
+
 ```mermaid
 erDiagram
-    users ||--o| organizations : owns
-    users ||--o{ registrations : makes
-    users ||--o{ notifications : receives
-    organizations ||--o{ opportunities : publishes
-    opportunities ||--o{ registrations : receives
-    registrations ||--|| attendance_and_hours : tracks
+    users ||--o| organizations : "owns"
+    organizations ||--o{ opportunities : "publishes"
+    opportunities ||--o{ registrations : "receives"
+    users ||--o{ registrations : "makes"
+    registrations ||--o| attendance_and_hours : "tracks"
+    users ||--o{ attendance_and_hours : "verifies"
+    users ||--o{ notifications : "receives"
 ```
 
 ---
@@ -135,3 +138,49 @@ In-app alert delivery.
 | `link` | VARCHAR(255) | NULL | Destination URL |
 | `is_read` | TINYINT(1) | NOT NULL, DEFAULT 0 | 0 = unread, 1 = read |
 | `created_at` | TIMESTAMP | DEFAULT CURRENT_TIMESTAMP | Delivery timestamp |
+
+---
+
+## Indexing strategy
+
+| Table | Index | Purpose |
+|---|---|---|
+| users | `UNIQUE(email)` | Login lookup, duplicate prevention |
+| users | `idx_users_role (role)` | Admin filtering by role |
+| organizations | `UNIQUE(user_id)` | One organization per user, ownership lookup |
+| opportunities | `idx_opp_status_start (status, start_at)` | Public listing ordered by date |
+| opportunities | `idx_opp_cause (cause_area)` | Cause filter |
+| opportunities | `idx_opp_location (location)` | Location filter (prefix searches only; `LIKE '%x%'` cannot use it) |
+| opportunities | `FULLTEXT ft_opp_search (title, description)` | Reserved for keyword search (current query uses `LIKE`) |
+| registrations | `UNIQUE(opportunity_id, volunteer_id)` | Duplicate prevention |
+| registrations | `idx_reg_volunteer (volunteer_id)` | Volunteer dashboard |
+| registrations | `idx_reg_opp_status (opportunity_id, status)` | Capacity count |
+| attendance_and_hours | `UNIQUE(registration_id)` | One hours record per registration |
+| attendance_and_hours | `idx_ah_status (verification_status)` | Verified and pending totals, reports |
+| notifications | `idx_notif_user_read (user_id, is_read)` | Unread badge and list |
+
+## Query rules (hour integrity)
+
+1. Any query that produces an official total or report row must include `verification_status = 'verified'` and read `hours_verified`.
+2. Display-only pending totals read `hours_claimed` for `unverified` and `pending` rows and are shown separately.
+3. All hour queries live in `app/models/HourModel.php`. New hour queries go there.
+4. Organization-scoped queries join through `registrations` and `opportunities` and filter on `o.organization_id`.
+
+## Transactions
+
+| Operation | Method | Locking |
+|---|---|---|
+| Register for an opportunity | `RegistrationModel::register` | `SELECT ... FOR UPDATE` on the opportunity row, then capacity count, insert registration, insert hours record, commit |
+
+## Seed data (`database/seed.sql`)
+
+Loads one administrator, three organization accounts with approved organizations (Blue Shores Initiative, Green Shift Media, Paws & Care Foundation), two volunteers, sample opportunities, and sample registrations, attendance and hour records, and sample notifications matching the Figma scenarios. Re-run `schema.sql` before reloading the seed to avoid duplicate key errors.
+
+## Planned schema changes (not in `schema.sql` yet)
+
+| Change | Reason | Gap ID |
+|---|---|---|
+| `saved_opportunities (user_id, opportunity_id, created_at)`, composite PK, FKs to `users` and `opportunities` | Persist bookmarks | G-17 |
+| `opportunities.location_type`, `duration`, `skills` (or removal of those filters) | Back the client-only search filters | G-14 |
+| `organizations.organization_type`, `cause_area` | Currently packed into `description` as `[Type: ...] [Cause: ...]` | see `docs/FLOW_AUTH.md` |
+| Optional `hour_audit_log` | Record who changed attendance or revoked verified hours | G-05, G-06 |
