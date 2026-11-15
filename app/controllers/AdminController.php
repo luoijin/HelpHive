@@ -64,7 +64,18 @@ final class AdminController
     {
         Auth::requireRole(Auth::ADMIN);
         $orgModel = new OrganizationModel(Database::connection());
-        $orgModel->approve($id);
+        $org = $orgModel->findById($id);
+        $approved = $orgModel->approve($id);
+
+        if ($approved && $org && !empty($org['user_id'])) {
+            $notifModel = new NotificationModel(Database::connection());
+            $notifModel->notify(
+                (int) $org['user_id'],
+                'organization',
+                "Your organization '{$org['name']}' has been approved! You may now publish opportunities.",
+                '/org/dashboard'
+            );
+        }
 
         Flash::success('Organization approved successfully.');
         header('Location: /admin/organizations');
@@ -76,7 +87,18 @@ final class AdminController
     {
         Auth::requireRole(Auth::ADMIN);
         $orgModel = new OrganizationModel(Database::connection());
-        $orgModel->reject($id);
+        $org = $orgModel->findById($id);
+        $rejected = $orgModel->reject($id);
+
+        if ($rejected && $org && !empty($org['user_id'])) {
+            $notifModel = new NotificationModel(Database::connection());
+            $notifModel->notify(
+                (int) $org['user_id'],
+                'organization',
+                "Your organization registration for '{$org['name']}' was rejected or unapproved by an administrator.",
+                '/org/dashboard'
+            );
+        }
 
         Flash::info('Organization status set to unapproved/rejected.');
         header('Location: /admin/organizations');

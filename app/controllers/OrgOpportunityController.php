@@ -163,7 +163,20 @@ final class OrgOpportunityController
         $orgId = $this->getOrgId($user);
 
         $oppModel = new OpportunityModel(Database::connection());
-        $oppModel->setStatus($id, $orgId, 'cancelled');
+        $volunteers = $oppModel->cancelOpportunity($id, $orgId);
+
+        if (!empty($volunteers)) {
+            $notifModel = new NotificationModel(Database::connection());
+            $title = $volunteers[0]['title'] ?? 'Volunteer Activity';
+            foreach ($volunteers as $v) {
+                $notifModel->notify(
+                    (int) $v['volunteer_id'],
+                    'opportunity',
+                    "The opportunity '{$title}' has been cancelled by the organizer.",
+                    '/volunteer/registrations'
+                );
+            }
+        }
 
         Flash::info('Opportunity marked as cancelled.');
         header('Location: /org/opportunities');

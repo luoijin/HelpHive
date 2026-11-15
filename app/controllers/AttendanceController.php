@@ -42,10 +42,23 @@ final class AttendanceController
             $status = 'present';
         }
 
+        $regModel = new RegistrationModel(Database::connection());
+        $reg = $regModel->findById($id);
+
         $hourModel = new HourModel(Database::connection());
         $updated = $hourModel->markAttendance($id, $orgId, $status);
 
         if ($updated) {
+            if ($reg) {
+                $notifModel = new NotificationModel(Database::connection());
+                $title = $reg['opportunity_title'] ?? 'Volunteer Activity';
+                $notifModel->notify(
+                    (int) $reg['volunteer_id'],
+                    'attendance',
+                    "Your attendance for '{$title}' was marked as " . ucfirst($status) . ".",
+                    '/volunteer/hours'
+                );
+            }
             Flash::success('Attendance status updated.');
         } else {
             Flash::error('Cannot update attendance for verified records.');
@@ -68,10 +81,23 @@ final class AttendanceController
             exit;
         }
 
+        $regModel = new RegistrationModel(Database::connection());
+        $reg = $regModel->findById($id);
+
         $hourModel = new HourModel(Database::connection());
         $verified = $hourModel->verify($id, $orgId, (int) $user['id'], $hours);
 
         if ($verified) {
+            if ($reg) {
+                $notifModel = new NotificationModel(Database::connection());
+                $title = $reg['opportunity_title'] ?? 'Volunteer Activity';
+                $notifModel->notify(
+                    (int) $reg['volunteer_id'],
+                    'verification',
+                    "Congratulations! Your {$hours} service hours for '{$title}' have been verified.",
+                    '/volunteer/hours'
+                );
+            }
             Flash::success("Successfully verified {$hours} service hours!");
         } else {
             Flash::error('Could not verify hours. Ensure volunteer attendance is marked as Present.');
@@ -87,10 +113,23 @@ final class AttendanceController
         $user = Auth::requireRole(Auth::ORGANIZATION);
         $orgId = $this->getOrgId($user);
 
+        $regModel = new RegistrationModel(Database::connection());
+        $reg = $regModel->findById($id);
+
         $hourModel = new HourModel(Database::connection());
         $rejected = $hourModel->reject($id, $orgId);
 
         if ($rejected) {
+            if ($reg) {
+                $notifModel = new NotificationModel(Database::connection());
+                $title = $reg['opportunity_title'] ?? 'Volunteer Activity';
+                $notifModel->notify(
+                    (int) $reg['volunteer_id'],
+                    'verification',
+                    "Your hour claim for '{$title}' was rejected by the organization.",
+                    '/volunteer/hours'
+                );
+            }
             Flash::info('Hour claim was rejected.');
         } else {
             Flash::error('Could not reject hours. Only unverified or pending hours can be rejected.');

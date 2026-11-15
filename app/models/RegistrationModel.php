@@ -7,6 +7,7 @@ final class RegistrationModel
 
     /**
      * Register a volunteer. Atomic: locks the opportunity row to prevent overbooking.
+     * If a cancelled registration exists for this volunteer, re-activates it.
      * @return string 'ok' | 'closed' | 'deadline' | 'full' | 'duplicate'
      */
     public function register(int $opportunityId, int $volunteerId): string
@@ -28,6 +29,43 @@ final class RegistrationModel
             $count->execute(['id' => $opportunityId]);
             if ((int) $count->fetchColumn() >= (int) $opp['capacity']) { $this->db->rollBack(); return 'full'; }
 
+            // Check if a registration already exists for this volunteer and opportunity
+            $checkExisting = $this->db->prepare(
+                'SELECT id, status FROM registrations WHERE opportunity_id = :o AND volunteer_id = :v LIMIT 1 FOR UPDATE'
+            );
+            $checkExisting->execute(['o' => $opportunityId, 'v' => $volunteerId]);
+            $existing = $checkExisting->fetch();
+
+            if ($existing) {
+                if ($existing['status'] === 'registered') {
+                    $this->db->rollBack();
+                    return 'duplicate';
+                }
+
+                // If previously cancelled, re-activate registration and reset attendance/hours record
+                $regId = (int) $existing['id'];
+                $up = $this->db->prepare(
+                    'UPDATE registrations SET status = \'registered\', registered_at = CURRENT_TIMESTAMP WHERE id = :id'
+                );
+                $up->execute(['id' => $regId]);
+
+                $resetAh = $this->db->prepare(
+                    'INSERT INTO attendance_and_hours (registration_id, attendance_status, hours_claimed, hours_verified, verification_status, verified_by, verified_at)
+                     VALUES (:r, \'pending\', 0.00, NULL, \'unverified\', NULL, NULL)
+                     ON DUPLICATE KEY UPDATE
+                         attendance_status = \'pending\',
+                         hours_claimed = 0.00,
+                         hours_verified = NULL,
+                         verification_status = \'unverified\',
+                         verified_by = NULL,
+                         verified_at = NULL'
+                );
+                $resetAh->execute(['r' => $regId]);
+
+                $this->db->commit();
+                return 'ok';
+            }
+
             // UNIQUE(opportunity_id, volunteer_id) is the final duplicate guard.
             $ins = $this->db->prepare(
                 'INSERT INTO registrations (opportunity_id, volunteer_id) VALUES (:o, :v)'
@@ -45,6 +83,19 @@ final class RegistrationModel
             if ($e->getCode() === '23000') { return 'duplicate'; }
             throw $e;
         }
+    }
+
+    public function findById(int $id): ?array
+    {
+        $sql = 'SELECT r.*, o.title AS opportunity_title, o.organization_id, org.name AS org_name, org.user_id AS org_user_id
+                FROM registrations r
+                JOIN opportunities o ON o.id = r.opportunity_id
+                JOIN organizations org ON org.id = o.organization_id
+                WHERE r.id = :id LIMIT 1';
+        $st = $this->db->prepare($sql);
+        $st->execute(['id' => $id]);
+        $row = $st->fetch();
+        return $row ?: null;
     }
 
     public function forVolunteer(int $volunteerId): array

@@ -11,6 +11,9 @@
 - **G-06 (Hour integrity)**: Guarded `HourModel::reject` to only accept unverified or pending hours (`verification_status IN ('unverified', 'pending')`), preventing arbitrary modification of already verified records without an audit trail.
 - **G-07 (Hour integrity)**: Hardened `HourModel::claimHours` by joining `opportunities` and enforcing `r.status = 'registered'`, `o.start_at <= NOW()`, and `ah.attendance_status <> 'absent'`, preventing volunteers from claiming hours on cancelled registrations, future events, or when marked absent.
 - **G-08 (Hour integrity)**: Filtered verified totals and reports with `AND r.status = 'registered'` across `verifiedTotalForVolunteer`, `pendingTotalForVolunteer`, `platformTotalVerified`, `verifiedTotalForOrg`, and `reportRows`. Also guarded `RegistrationModel::cancel` to disallow cancellation once hours are verified.
+- **G-09 (Re-registration)**: Fixed re-registration failure in `RegistrationModel::register` by checking for existing cancelled registrations and re-activating them (`status = 'registered'`) while resetting the attendance and hours record to default unverified state.
+- **G-12 (Notifications)**: Wired in-app alerts via `NotificationModel::notify()` for registration confirmations (volunteer & organization), registration cancellations (volunteer & organization), attendance marked (volunteer), hours verified and rejected (volunteer), and organization approval and rejection (organization user).
+- **G-13 (Opportunity Cancellation)**: Created atomic `OpportunityModel::cancelOpportunity` transaction that sets the opportunity status to `cancelled`, cascades cancellation to active registrations, and notifies all affected volunteers.
 
 ### Documentation
 - Rewrote `ARCHITECTURE.md` to match the current codebase: layers, request lifecycle, roles, invariants and where they are enforced, security controls, frontend structure, repository layout, document map.

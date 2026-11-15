@@ -119,6 +119,39 @@ final class OpportunityModel
         return $st->rowCount() === 1;
     }
 
+    public function cancelOpportunity(int $id, int $orgId): array
+    {
+        $this->db->beginTransaction();
+        try {
+            $st = $this->db->prepare('UPDATE opportunities SET status = \'cancelled\' WHERE id = :id AND organization_id = :oid');
+            $st->execute(['id' => $id, 'oid' => $orgId]);
+            if ($st->rowCount() === 0) {
+                $this->db->rollBack();
+                return [];
+            }
+
+            $volQuery = $this->db->prepare(
+                'SELECT r.volunteer_id, o.title
+                 FROM registrations r
+                 JOIN opportunities o ON o.id = r.opportunity_id
+                 WHERE r.opportunity_id = :id AND r.status = \'registered\''
+            );
+            $volQuery->execute(['id' => $id]);
+            $volunteers = $volQuery->fetchAll();
+
+            $upReg = $this->db->prepare(
+                'UPDATE registrations SET status = \'cancelled\' WHERE opportunity_id = :id AND status = \'registered\''
+            );
+            $upReg->execute(['id' => $id]);
+
+            $this->db->commit();
+            return $volunteers;
+        } catch (PDOException $e) {
+            $this->db->rollBack();
+            throw $e;
+        }
+    }
+
     public function deleteDraft(int $id, int $orgId): bool
     {
         $st = $this->db->prepare('DELETE FROM opportunities WHERE id = :id AND organization_id = :oid AND status = \'draft\'');
