@@ -399,20 +399,10 @@ function normalizeOpportunity(raw) {
 }
 
 function getAllOpportunities() {
-  const map = new Map();
-  // 1. Add static normalized opportunities
-  OPPORTUNITIES_DATA.forEach(o => {
-    const norm = normalizeOpportunity(o);
-    map.set(String(norm.id), norm);
-  });
-  // 2. Add or override with server opportunities if present
-  if (window.SERVER_OPPORTUNITIES && Array.isArray(window.SERVER_OPPORTUNITIES) && window.SERVER_OPPORTUNITIES.length > 0) {
-    window.SERVER_OPPORTUNITIES.forEach(so => {
-      const norm = normalizeOpportunity(so);
-      map.set(String(norm.id), norm);
-    });
+  if (window.SERVER_OPPORTUNITIES && Array.isArray(window.SERVER_OPPORTUNITIES)) {
+    return window.SERVER_OPPORTUNITIES.map(normalizeOpportunity);
   }
-  return Array.from(map.values());
+  return [];
 }
 
 function getOpportunityById(oppId) {
@@ -597,11 +587,13 @@ function startVolunteerRegistration(oppId) {
     showToast('Please log in to register for opportunities.');
     return;
   }
-  const opp = OPPORTUNITIES_DATA.find(o => o.id === oppId);
+  const opp = getOpportunityById(oppId);
   if (opp) {
     selectedOpportunity = opp;
-    document.getElementById('reg-form-opp-title').textContent = opp.title;
-    document.getElementById('reg-form-opp-org').textContent = `${opp.org} • ${opp.time}`;
+    const titleEl = document.getElementById('reg-form-opp-title');
+    if (titleEl) titleEl.textContent = opp.title;
+    const orgEl = document.getElementById('reg-form-opp-org');
+    if (orgEl) orgEl.textContent = `${opp.org} • ${opp.time || opp.schedule || ''}`;
   }
   navigateTo('volunteer-reg');
 }
@@ -700,7 +692,7 @@ function renderSavedList() {
   const container = document.getElementById('saved-opportunities-container');
   if (!container) return;
 
-  const savedData = OPPORTUNITIES_DATA.filter(o => savedOpportunities.has(o.id));
+  const savedData = getAllOpportunities().filter(o => savedOpportunities.has(String(o.id)) || (o.slug && savedOpportunities.has(o.slug)));
   if (savedData.length === 0) {
     container.innerHTML = `
       <div style="text-align: center; padding: 48px; background: #fff; border: 1px solid var(--slate-border); border-radius: var(--radius-lg);">
@@ -848,6 +840,11 @@ function getFilteredOpportunities() {
   const distEl = document.getElementById('filter-distance');
   const distance = distEl ? distEl.value : '';
 
+  const dateFromEl = document.getElementById('search-date-from');
+  const dateFrom = dateFromEl ? dateFromEl.value : '';
+  const dateToEl = document.getElementById('search-date-to');
+  const dateTo = dateToEl ? dateToEl.value : '';
+
   const checkedLocs = Array.from(document.querySelectorAll('input[name="locType"]:checked')).map(cb => cb.value);
   const checkedCauses = Array.from(document.querySelectorAll('input[name="causeArea"]:checked')).map(cb => cb.value);
   const checkedGoodFor = Array.from(document.querySelectorAll('input[name="goodFor"]:checked')).map(cb => cb.value);
@@ -909,6 +906,22 @@ function getFilteredOpportunities() {
       if (!skillMatch) return false;
     }
 
+    // 9. Date filter
+    if (dateFrom && opp.schedule) {
+      const oppDate = new Date(opp.schedule);
+      if (!isNaN(oppDate.getTime())) {
+        const fromDate = new Date(dateFrom + 'T00:00:00');
+        if (oppDate < fromDate) return false;
+      }
+    }
+    if (dateTo && opp.schedule) {
+      const oppDate = new Date(opp.schedule);
+      if (!isNaN(oppDate.getTime())) {
+        const toDate = new Date(dateTo + 'T23:59:59');
+        if (oppDate > toDate) return false;
+      }
+    }
+
     return true;
   });
 }
@@ -943,6 +956,10 @@ function handleSearchSubmit(e) {
     params.set('location', rawLoc);
   }
   if (dist) params.set('distance', dist);
+  const dateFrom = document.getElementById('search-date-from')?.value;
+  const dateTo = document.getElementById('search-date-to')?.value;
+  if (dateFrom) params.set('date_from', dateFrom);
+  if (dateTo) params.set('date_to', dateTo);
 
   const queryString = params.toString() ? ('?' + params.toString()) : '';
   window.history.replaceState({}, '', '/opportunities' + queryString);
@@ -1070,6 +1087,12 @@ function selectAll(groupName) {
 function resetAllFilters() {
   const kw = document.getElementById('search-keyword');
   if (kw) kw.value = '';
+
+  const dateFromEl = document.getElementById('search-date-from');
+  if (dateFromEl) dateFromEl.value = '';
+
+  const dateToEl = document.getElementById('search-date-to');
+  if (dateToEl) dateToEl.value = '';
 
   const loc = document.getElementById('search-location');
   if (loc) loc.value = 'Any';

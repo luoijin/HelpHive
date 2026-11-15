@@ -5,7 +5,7 @@ final class OpportunityModel
 {
     public function __construct(private PDO $db) {}
 
-    public function allPublished(?string $keyword = null, ?string $cause = null, ?string $location = null): array
+    public function allPublished(?string $keyword = null, ?string $cause = null, ?string $location = null, ?string $dateFrom = null, ?string $dateTo = null): array
     {
         $sql = 'SELECT o.*, org.name AS org_name
                 FROM opportunities o
@@ -21,9 +21,17 @@ final class OpportunityModel
             $sql .= ' AND o.cause_area = :cause';
             $params['cause'] = $cause;
         }
-        if (!empty($location) && trim($location) !== '') {
+        if (!empty($location) && trim($location) !== '' && strtolower(trim($location)) !== 'any') {
             $sql .= ' AND o.location LIKE :loc';
             $params['loc'] = '%' . trim($location) . '%';
+        }
+        if (!empty($dateFrom)) {
+            $sql .= ' AND o.start_at >= :date_from';
+            $params['date_from'] = date('Y-m-d 00:00:00', strtotime($dateFrom));
+        }
+        if (!empty($dateTo)) {
+            $sql .= ' AND o.start_at <= :date_to';
+            $params['date_to'] = date('Y-m-d 23:59:59', strtotime($dateTo));
         }
 
         $sql .= ' ORDER BY o.start_at ASC';

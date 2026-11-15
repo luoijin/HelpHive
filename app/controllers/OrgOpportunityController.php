@@ -19,6 +19,84 @@ final class OrgOpportunityController
         return $org;
     }
 
+    /**
+     * @return array{data: array, error: ?string}
+     */
+    private function validateOpportunityInput(array $input, int $orgId, bool $isApproved): array
+    {
+        $title = trim($input['title'] ?? '');
+        $description = trim($input['description'] ?? '');
+        $causeArea = trim($input['cause_area'] ?? 'Community Support');
+        $location = trim($input['location'] ?? '');
+        $startRaw = trim($input['start_at'] ?? '');
+        $endRaw = trim($input['end_at'] ?? '');
+        $deadlineRaw = trim($input['registration_deadline'] ?? '');
+        $capacity = (int) ($input['capacity'] ?? 0);
+        $requirements = trim($input['requirements'] ?? '');
+        $status = trim($input['status'] ?? 'draft');
+
+        if ($title === '') {
+            return ['data' => [], 'error' => 'Opportunity title is required.'];
+        }
+        if (strlen($title) < 3 || strlen($title) > 180) {
+            return ['data' => [], 'error' => 'Opportunity title must be between 3 and 180 characters.'];
+        }
+        if ($description === '') {
+            return ['data' => [], 'error' => 'Opportunity description is required.'];
+        }
+        if ($location === '') {
+            return ['data' => [], 'error' => 'Location / venue is required.'];
+        }
+        if ($causeArea === '') {
+            return ['data' => [], 'error' => 'Cause area is required.'];
+        }
+
+        $startTs = strtotime($startRaw);
+        $endTs = strtotime($endRaw);
+        $deadlineTs = strtotime($deadlineRaw);
+
+        if (!$startTs || !$endTs || !$deadlineTs) {
+            return ['data' => [], 'error' => 'Please provide valid dates and times for event schedule and deadline.'];
+        }
+
+        if ($endTs <= $startTs) {
+            return ['data' => [], 'error' => 'Event end date and time must be after the start date and time.'];
+        }
+
+        if ($deadlineTs > $startTs) {
+            return ['data' => [], 'error' => 'Registration deadline must be before or equal to the event start date and time.'];
+        }
+
+        if ($capacity < 1) {
+            return ['data' => [], 'error' => 'Volunteer capacity must be at least 1.'];
+        }
+
+        if (!in_array($status, ['draft', 'published', 'cancelled', 'completed'], true)) {
+            $status = 'draft';
+        }
+
+        if (!$isApproved && $status === 'published') {
+            $status = 'draft';
+        }
+
+        return [
+            'data' => [
+                'organization_id' => $orgId,
+                'title' => $title,
+                'description' => $description,
+                'cause_area' => $causeArea,
+                'location' => $location,
+                'start_at' => date('Y-m-d H:i:s', $startTs),
+                'end_at' => date('Y-m-d H:i:s', $endTs),
+                'registration_deadline' => date('Y-m-d H:i:s', $deadlineTs),
+                'capacity' => $capacity,
+                'requirements' => $requirements !== '' ? $requirements : null,
+                'status' => $status,
+            ],
+            'error' => null,
+        ];
+    }
+
     /** GET /org/opportunities */
     public function index(): void
     {
@@ -50,30 +128,31 @@ final class OrgOpportunityController
         $orgId = (int) $org['id'];
         $isApproved = (int) ($org['is_approved'] ?? 0) === 1;
 
-        $status = $_POST['status'] ?? 'draft';
-        if (!$isApproved && $status === 'published') {
-            $status = 'draft';
-            Flash::info('Your organization is pending administrator approval. Opportunity saved as a draft.');
-        } else {
-            Flash::success('Opportunity created successfully!');
+        $validation = $this->validateOpportunityInput($_POST, $orgId, $isApproved);
+        if ($validation['error'] !== null) {
+            Flash::error($validation['error']);
+            header('Location: /org/opportunities/create');
+            exit;
         }
 
-        $data = [
-            'organization_id' => $orgId,
-            'title' => trim($_POST['title'] ?? ''),
-            'description' => trim($_POST['description'] ?? ''),
-            'cause_area' => trim($_POST['cause_area'] ?? 'Community Support'),
-            'location' => trim($_POST['location'] ?? ''),
-            'start_at' => $_POST['start_at'] ?? date('Y-m-d H:i:s'),
-            'end_at' => $_POST['end_at'] ?? date('Y-m-d H:i:s'),
-            'registration_deadline' => $_POST['registration_deadline'] ?? date('Y-m-d H:i:s'),
-            'capacity' => (int) ($_POST['capacity'] ?? 20),
-            'requirements' => trim($_POST['requirements'] ?? ''),
-            'status' => $status,
-        ];
+        $data = $validation['data'];
+        $requestedStatus = $_POST['status'] ?? 'draft';
 
-        $oppModel = new OpportunityModel(Database::connection());
-        $newId = $oppModel->create($data);
+        try {
+            $oppModel = new OpportunityModel(Database::connection());
+            $oppModel->create($data);
+
+            if (!$isApproved && $requestedStatus === 'published') {
+                Flash::info('Your organization is pending administrator approval. Opportunity saved as a draft.');
+            } else {
+                Flash::success('Opportunity created successfully!');
+            }
+        } catch (\PDOException $e) {
+            error_log('Database error in OrgOpportunityController@store: ' . $e->getMessage());
+            Flash::error('Could not create opportunity due to a database constraint error.');
+            header('Location: /org/opportunities/create');
+            exit;
+        }
 
         header('Location: /org/opportunities');
         exit;
@@ -106,29 +185,37 @@ final class OrgOpportunityController
         $orgId = (int) $org['id'];
         $isApproved = (int) ($org['is_approved'] ?? 0) === 1;
 
-        $status = $_POST['status'] ?? 'draft';
-        if (!$isApproved && $status === 'published') {
-            $status = 'draft';
-            Flash::info('Your organization is pending administrator approval. Opportunity saved as a draft.');
-        } else {
-            Flash::success('Opportunity updated successfully.');
+        $oppModel = new OpportunityModel(Database::connection());
+        $existingOpp = $oppModel->find($id);
+        if (!$existingOpp || (int) $existingOpp['organization_id'] !== $orgId) {
+            http_response_code(403);
+            exit('Forbidden: you do not own this opportunity.');
         }
 
-        $data = [
-            'title' => trim($_POST['title'] ?? ''),
-            'description' => trim($_POST['description'] ?? ''),
-            'cause_area' => trim($_POST['cause_area'] ?? 'Community Support'),
-            'location' => trim($_POST['location'] ?? ''),
-            'start_at' => $_POST['start_at'] ?? date('Y-m-d H:i:s'),
-            'end_at' => $_POST['end_at'] ?? date('Y-m-d H:i:s'),
-            'registration_deadline' => $_POST['registration_deadline'] ?? date('Y-m-d H:i:s'),
-            'capacity' => (int) ($_POST['capacity'] ?? 20),
-            'requirements' => trim($_POST['requirements'] ?? ''),
-            'status' => $status,
-        ];
+        $validation = $this->validateOpportunityInput($_POST, $orgId, $isApproved);
+        if ($validation['error'] !== null) {
+            Flash::error($validation['error']);
+            header('Location: /org/opportunities/' . $id . '/edit');
+            exit;
+        }
 
-        $oppModel = new OpportunityModel(Database::connection());
-        $oppModel->update($id, $orgId, $data);
+        $data = $validation['data'];
+        $requestedStatus = $_POST['status'] ?? 'draft';
+
+        try {
+            $oppModel->update($id, $orgId, $data);
+
+            if (!$isApproved && $requestedStatus === 'published') {
+                Flash::info('Your organization is pending administrator approval. Opportunity saved as a draft.');
+            } else {
+                Flash::success('Opportunity updated successfully.');
+            }
+        } catch (\PDOException $e) {
+            error_log('Database error in OrgOpportunityController@update: ' . $e->getMessage());
+            Flash::error('Could not update opportunity due to a database constraint error.');
+            header('Location: /org/opportunities/' . $id . '/edit');
+            exit;
+        }
 
         header('Location: /org/opportunities');
         exit;

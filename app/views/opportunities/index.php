@@ -6,6 +6,8 @@ $keyword = $_GET['keyword'] ?? '';
 $location = $_GET['location'] ?? '';
 $selectedCause = $_GET['cause'] ?? '';
 $selectedDistance = $_GET['distance'] ?? '';
+$dateFrom = $_GET['date_from'] ?? '';
+$dateTo = $_GET['date_to'] ?? '';
 ?>
 <!-- 2. SEARCH OPPORTUNITIES VIEW (Figma 308:40548) -->
 <section id="view-search" class="page-view active" style="display: block;">
@@ -87,6 +89,14 @@ $selectedDistance = $_GET['distance'] ?? '';
             <button type="button" class="distance-opt <?= $selectedDistance === 'province' ? 'active' : '' ?>" onclick="selectDistance('province', 'Within my province')">Within my province</button>
           </div>
         </div>
+      </div>
+
+      <!-- Date Range Filter -->
+      <div class="search-input-field date-filter" style="display: flex; align-items: center; gap: 6px; padding: 0 14px;">
+        <i data-lucide="calendar" class="field-icon"></i>
+        <input type="date" name="date_from" id="search-date-from" value="<?= e($dateFrom) ?>" placeholder="From" title="Start date from" onchange="applyFilters()" style="border: none; outline: none; background: transparent; font-size: 13px; color: var(--slate-text);">
+        <span style="color: var(--slate-muted); font-size: 12px;">to</span>
+        <input type="date" name="date_to" id="search-date-to" value="<?= e($dateTo) ?>" placeholder="To" title="Start date to" onchange="applyFilters()" style="border: none; outline: none; background: transparent; font-size: 13px; color: var(--slate-text);">
       </div>
 
       <button type="submit" class="btn btn-primary search-action-btn" id="search-action-btn" onclick="handleSearchSubmit(event)">
@@ -182,7 +192,7 @@ $selectedDistance = $_GET['distance'] ?? '';
     <!-- Result Badge & Counter + Reset All Filters -->
     <div class="results-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px;">
       <div class="results-badge" id="results-count-badge">
-        <?= count($opportunitiesList) > 0 ? count($opportunitiesList) . ' Opportunities' : '8 Opportunities' ?>
+        <?= count($opportunitiesList) . ' ' . (count($opportunitiesList) === 1 ? 'Opportunity' : 'Opportunities') ?>
       </div>
       <button type="button" class="btn btn-ghost btn-sm btn-reset-all" id="btn-reset-all-filters" onclick="resetAllFilters()" style="display: inline-flex; align-items: center; gap: 6px; padding: 6px 14px; font-size: 13px; border-radius: var(--radius-full); cursor: pointer; border: 1px solid var(--slate-border); background: #ffffff;">
         <i data-lucide="rotate-ccw" style="width: 14px; height: 14px;"></i> Reset All Filters
@@ -225,7 +235,10 @@ $selectedDistance = $_GET['distance'] ?? '';
           </article>
         <?php endforeach; ?>
       <?php else: ?>
-        <!-- Handled dynamically by app.js fallback or initial render -->
+        <div class="empty-state" style="text-align: center; color: var(--slate-muted); padding: 48px 16px; background: #fff; border: 1px solid var(--slate-border); border-radius: var(--radius-lg); width: 100%;">
+          <h3 style="font-size: 18px; font-weight: 600; margin-bottom: 8px;">No volunteering opportunities found</h3>
+          <p style="margin-bottom: 16px;">Try adjusting your search criteria, dates, or clearing filters.</p>
+        </div>
       <?php endif; ?>
     </div>
 
