@@ -32,6 +32,19 @@ final class OpportunityModel
         return $st->fetchAll();
     }
 
+    public function findPublished(int $id): ?array
+    {
+        $st = $this->db->prepare(
+            'SELECT o.*, org.name AS org_name, org.contact_email AS org_email
+             FROM opportunities o
+             JOIN organizations org ON org.id = o.organization_id
+             WHERE o.id = :id AND o.status = \'published\' LIMIT 1'
+        );
+        $st->execute(['id' => $id]);
+        $row = $st->fetch();
+        return $row ?: null;
+    }
+
     public function find(int $id): ?array
     {
         $st = $this->db->prepare(

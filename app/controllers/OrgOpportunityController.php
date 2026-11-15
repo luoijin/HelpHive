@@ -8,6 +8,17 @@ final class OrgOpportunityController
         return (new OrganizationModel(Database::connection()))->idForUser((int) $user['id']);
     }
 
+    private function getOrganization(array $user): array
+    {
+        $org = (new OrganizationModel(Database::connection()))->findByUserId((int) $user['id']);
+        if (!$org) {
+            Flash::error('Organization profile not found.');
+            header('Location: /org/dashboard');
+            exit;
+        }
+        return $org;
+    }
+
     /** GET /org/opportunities */
     public function index(): void
     {
@@ -35,7 +46,17 @@ final class OrgOpportunityController
     public function store(): void
     {
         $user = Auth::requireRole(Auth::ORGANIZATION);
-        $orgId = $this->getOrgId($user);
+        $org = $this->getOrganization($user);
+        $orgId = (int) $org['id'];
+        $isApproved = (int) ($org['is_approved'] ?? 0) === 1;
+
+        $status = $_POST['status'] ?? 'draft';
+        if (!$isApproved && $status === 'published') {
+            $status = 'draft';
+            Flash::info('Your organization is pending administrator approval. Opportunity saved as a draft.');
+        } else {
+            Flash::success('Opportunity created successfully!');
+        }
 
         $data = [
             'organization_id' => $orgId,
@@ -48,13 +69,12 @@ final class OrgOpportunityController
             'registration_deadline' => $_POST['registration_deadline'] ?? date('Y-m-d H:i:s'),
             'capacity' => (int) ($_POST['capacity'] ?? 20),
             'requirements' => trim($_POST['requirements'] ?? ''),
-            'status' => $_POST['status'] ?? 'draft',
+            'status' => $status,
         ];
 
         $oppModel = new OpportunityModel(Database::connection());
         $newId = $oppModel->create($data);
 
-        Flash::success('Opportunity created successfully!');
         header('Location: /org/opportunities');
         exit;
     }
@@ -82,7 +102,17 @@ final class OrgOpportunityController
     public function update(int $id): void
     {
         $user = Auth::requireRole(Auth::ORGANIZATION);
-        $orgId = $this->getOrgId($user);
+        $org = $this->getOrganization($user);
+        $orgId = (int) $org['id'];
+        $isApproved = (int) ($org['is_approved'] ?? 0) === 1;
+
+        $status = $_POST['status'] ?? 'draft';
+        if (!$isApproved && $status === 'published') {
+            $status = 'draft';
+            Flash::info('Your organization is pending administrator approval. Opportunity saved as a draft.');
+        } else {
+            Flash::success('Opportunity updated successfully.');
+        }
 
         $data = [
             'title' => trim($_POST['title'] ?? ''),
@@ -94,13 +124,12 @@ final class OrgOpportunityController
             'registration_deadline' => $_POST['registration_deadline'] ?? date('Y-m-d H:i:s'),
             'capacity' => (int) ($_POST['capacity'] ?? 20),
             'requirements' => trim($_POST['requirements'] ?? ''),
-            'status' => $_POST['status'] ?? 'draft',
+            'status' => $status,
         ];
 
         $oppModel = new OpportunityModel(Database::connection());
         $oppModel->update($id, $orgId, $data);
 
-        Flash::success('Opportunity updated successfully.');
         header('Location: /org/opportunities');
         exit;
     }
@@ -109,7 +138,15 @@ final class OrgOpportunityController
     public function publish(int $id): void
     {
         $user = Auth::requireRole(Auth::ORGANIZATION);
-        $orgId = $this->getOrgId($user);
+        $org = $this->getOrganization($user);
+        $orgId = (int) $org['id'];
+        $isApproved = (int) ($org['is_approved'] ?? 0) === 1;
+
+        if (!$isApproved) {
+            Flash::error('Your organization must be approved by an administrator before publishing opportunities.');
+            header('Location: /org/opportunities');
+            exit;
+        }
 
         $oppModel = new OpportunityModel(Database::connection());
         $oppModel->setStatus($id, $orgId, 'published');

@@ -43,9 +43,14 @@ final class AttendanceController
         }
 
         $hourModel = new HourModel(Database::connection());
-        $hourModel->markAttendance($id, $orgId, $status);
+        $updated = $hourModel->markAttendance($id, $orgId, $status);
 
-        Flash::success('Attendance status updated.');
+        if ($updated) {
+            Flash::success('Attendance status updated.');
+        } else {
+            Flash::error('Cannot update attendance for verified records.');
+        }
+
         header('Location: ' . ($_SERVER['HTTP_REFERER'] ?? '/org/opportunities'));
         exit;
     }
@@ -88,7 +93,7 @@ final class AttendanceController
         if ($rejected) {
             Flash::info('Hour claim was rejected.');
         } else {
-            Flash::error('Could not reject hours.');
+            Flash::error('Could not reject hours. Only unverified or pending hours can be rejected.');
         }
 
         header('Location: ' . ($_SERVER['HTTP_REFERER'] ?? '/org/opportunities'));

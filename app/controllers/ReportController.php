@@ -37,8 +37,13 @@ final class ReportController
     public function pdf(): void
     {
         $user = Auth::requireRole(Auth::ORGANIZATION);
-        $orgId = $this->getOrgId($user);
-        $rows = (new HourModel(Database::connection()))->reportRows($orgId, $_GET['from'] ?? null, $_GET['to'] ?? null);
-        PdfExporter::download($rows, 'helphive-report-' . date('Ymd') . '.pdf');
+        $org = (new OrganizationModel(Database::connection()))->findByUserId((int) $user['id']);
+        if (!$org) {
+            Flash::error('Organization profile not found.');
+            header('Location: /org/dashboard');
+            exit;
+        }
+        $rows = (new HourModel(Database::connection()))->reportRows((int) $org['id'], $_GET['from'] ?? null, $_GET['to'] ?? null);
+        PdfExporter::download($rows, (string) $org['name'], 'helphive-report-' . date('Ymd') . '.pdf');
     }
 }

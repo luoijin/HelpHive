@@ -63,7 +63,11 @@ final class RegistrationModel
     public function cancel(int $registrationId, int $volunteerId): bool
     {
         $st = $this->db->prepare(
-            'UPDATE registrations SET status = \'cancelled\' WHERE id = :id AND volunteer_id = :vid'
+            'UPDATE registrations r
+             LEFT JOIN attendance_and_hours ah ON ah.registration_id = r.id
+             SET r.status = \'cancelled\'
+             WHERE r.id = :id AND r.volunteer_id = :vid
+               AND (ah.verification_status IS NULL OR ah.verification_status <> \'verified\')'
         );
         $st->execute(['id' => $registrationId, 'vid' => $volunteerId]);
         return $st->rowCount() === 1;

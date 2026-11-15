@@ -76,7 +76,10 @@ final class AuthController
             $causeArea = trim($_POST['cause_area'] ?? '');
             $location = trim($_POST['location'] ?? '');
             $description = trim($_POST['description'] ?? '');
-            $contactEmail = trim($_POST['email'] ?? $currentUser['email']);
+            $userModel = new UserModel(Database::connection());
+            $userRecord = $userModel->findById((int) $currentUser['id']);
+            $defaultEmail = $userRecord['email'] ?? '';
+            $contactEmail = trim($_POST['email'] ?? $defaultEmail);
 
             if ($orgName === '' || $location === '' || $description === '') {
                 Flash::error('Please fill in all required organization fields.');
@@ -103,9 +106,11 @@ final class AuthController
             );
 
             // Update user role to organization and refresh session
-            $userModel = new UserModel(Database::connection());
             $userModel->updateRole((int) $currentUser['id'], Auth::ORGANIZATION);
-            $_SESSION['user'] = $userModel->findById((int) $currentUser['id']);
+            $freshUser = $userModel->findById((int) $currentUser['id']);
+            if ($freshUser !== null) {
+                Auth::login($freshUser);
+            }
 
             Flash::success('Organization submitted successfully! Awaiting administrator approval.');
             header('Location: /org/dashboard');

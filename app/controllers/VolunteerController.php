@@ -82,7 +82,7 @@ final class VolunteerController
         if ($claimed) {
             Flash::success("Successfully submitted claim for {$hours} hours. Pending organization verification.");
         } else {
-            Flash::error('Could not claim hours for this record.');
+            Flash::error('Could not claim hours. Ensure the event has started, your registration is active, and attendance is not marked absent.');
         }
 
         header('Location: /volunteer/hours');

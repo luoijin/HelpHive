@@ -10,16 +10,20 @@ Update this file as items are fixed, and move the fix into `CHANGELOG.md`.
 
 ## P1 - Fix first
 
-| ID | Area | Current behavior | Fix |
+All P1 items have been addressed and moved to the Resolved section below.
+
+## Resolved
+
+| ID | Area | Previous behavior | Resolution |
 |---|---|---|---|
-| G-01 | Visibility | `OpportunityModel::find()` has no status filter, so `GET /opportunities/{id}` shows draft and cancelled opportunities to anyone who knows the id | Add `findPublished($id)` for the public detail route; keep `find()` for owner pages that already check `organization_id` |
-| G-02 | Approval | `OrgOpportunityController` never checks `organizations.is_approved`, so unapproved organizations can publish | In `store`, `update`, `publish`: if `is_approved = 0`, force `draft` or block with a flash message |
-| G-03 | Exports | `ReportController::pdf` calls `PdfExporter::download($rows, $filename)`, but the method is `download(array $rows, string $orgName, string $filename)`; the PDF route throws an argument error | Load the organization name and call `download($rows, $org['name'], $filename)` |
-| G-04 | Session | `AuthController::register` (organization path) sets `$_SESSION['user']` to the full `users` row. That stores `password_hash` in the session and uses `full_name`, while the header reads `name`, so the display name falls back to "Volunteer" | After `updateRole`, call `Auth::login($userModel->findById($id))` so the session has `id`, `name`, `role` only |
-| G-05 | Hour integrity | `HourModel::markAttendance` has no state guard: marking a volunteer Absent after verification leaves `verified` hours in place | Allow attendance changes only while `verification_status <> 'verified'`, or reset the hours record to `unverified` in the same statement |
-| G-06 | Hour integrity | `HourModel::reject` can turn a `verified` record into `rejected` with no audit trail | Restrict to `unverified` and `pending`, or add an explicit "revoke" action that logs who did it |
-| G-07 | Hour integrity | `claimHours` does not check that the registration is `registered`, that the event has started, or that attendance is not `absent` | Join `registrations` and require `r.status = 'registered'` and `o.start_at <= NOW()` |
-| G-08 | Hour integrity | Verified totals (`verifiedTotalForVolunteer`, `verifiedTotalForOrg`, `reportRows`) do not filter `registrations.status`; a registration cancelled after verification still counts | Add `AND r.status = 'registered'` to those queries, or block cancelling once hours are verified |
+| G-01 | Visibility | `OpportunityModel::find()` had no status filter, so `GET /opportunities/{id}` showed draft and cancelled opportunities to anyone who knew the id | Added `findPublished($id)` for the public detail route (`OpportunityController::show`); kept `find()` for owner pages that check `organization_id` |
+| G-02 | Approval | `OrgOpportunityController` never checked `organizations.is_approved`, so unapproved organizations could publish | In `store` and `update`, forced `status = 'draft'` with flash message when `is_approved = 0`; in `publish`, blocked publishing with flash error |
+| G-03 | Exports | `ReportController::pdf` called `PdfExporter::download($rows, $filename)`, but the method expected `($rows, $orgName, $filename)` throwing an argument error | Loaded the organization name and passed `download($rows, (string) $org['name'], $filename)` |
+| G-04 | Session | `AuthController::register` (organization path) set `$_SESSION['user']` to full `users` row, leaking `password_hash` and causing name fallback to "Volunteer" | After `updateRole`, refreshed session via `Auth::login($userModel->findById($id))` so session contains only `id`, `name`, and `role` |
+| G-05 | Hour integrity | `HourModel::markAttendance` had no state guard; marking Absent after verification left `verified` hours intact | `HourModel::markAttendance` restricts updates to `verification_status <> 'verified'`, blocking attendance changes once hours are verified |
+| G-06 | Hour integrity | `HourModel::reject` could flip a `verified` record to `rejected` with no audit trail | `HourModel::reject` restricted to `verification_status IN ('unverified', 'pending')` |
+| G-07 | Hour integrity | `claimHours` did not check registration status, event start time, or absence | `HourModel::claimHours` joins `opportunities` and requires `r.status = 'registered'`, `o.start_at <= NOW()`, and `ah.attendance_status <> 'absent'` |
+| G-08 | Hour integrity | Verified totals and report queries did not filter `registrations.status`, counting cancelled registrations | Added `AND r.status = 'registered'` to `verifiedTotalForVolunteer`, `pendingTotalForVolunteer`, `platformTotalVerified`, `verifiedTotalForOrg`, and `reportRows`. Also guarded `RegistrationModel::cancel` against cancelling verified records |
 
 ## P2 - Correct behavior
 

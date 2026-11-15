@@ -11,13 +11,19 @@ final class HourModel
     /**
      * Volunteer submits or updates claimed hours. Stays unverified/pending.
      * Ownership is enforced through the registration's volunteer_id.
+     * Requires active registration, past or started event, attendance not absent,
+     * and status unverified/pending/rejected.
      */
     public function claimHours(int $registrationId, int $volunteerId, float $hours): bool
     {
         $sql = 'UPDATE attendance_and_hours ah
                 JOIN registrations r ON r.id = ah.registration_id
+                JOIN opportunities o ON o.id = r.opportunity_id
                 SET ah.hours_claimed = :h, ah.verification_status = \'pending\'
                 WHERE ah.registration_id = :rid AND r.volunteer_id = :vid
+                  AND r.status = \'registered\'
+                  AND o.start_at <= NOW()
+                  AND ah.attendance_status <> \'absent\'
                   AND ah.verification_status IN (\'unverified\',\'pending\',\'rejected\')';
         $st = $this->db->prepare($sql);
         $st->execute(['h' => $hours, 'rid' => $registrationId, 'vid' => $volunteerId]);
@@ -26,17 +32,39 @@ final class HourModel
 
     /**
      * Update attendance status (present, absent, excused, pending).
+     * Disallowed once hours are verified.
      */
     public function markAttendance(int $registrationId, int $organizationId, string $status): bool
     {
-        $sql = 'UPDATE attendance_and_hours ah
-                JOIN registrations r ON r.id = ah.registration_id
-                JOIN opportunities o ON o.id = r.opportunity_id
-                SET ah.attendance_status = :st
-                WHERE ah.registration_id = :rid AND o.organization_id = :oid';
-        $st = $this->db->prepare($sql);
-        $st->execute(['st' => $status, 'rid' => $registrationId, 'oid' => $organizationId]);
-        return $st->rowCount() >= 0;
+        $st = $this->db->prepare(
+            'SELECT ah.verification_status, ah.attendance_status
+             FROM attendance_and_hours ah
+             JOIN registrations r ON r.id = ah.registration_id
+             JOIN opportunities o ON o.id = r.opportunity_id
+             WHERE ah.registration_id = :rid AND o.organization_id = :oid'
+        );
+        $st->execute(['rid' => $registrationId, 'oid' => $organizationId]);
+        $row = $st->fetch();
+        if (!$row) {
+            return false;
+        }
+        if ($row['verification_status'] === 'verified') {
+            return false;
+        }
+        if ($row['attendance_status'] === $status) {
+            return true;
+        }
+
+        $up = $this->db->prepare(
+            'UPDATE attendance_and_hours ah
+             JOIN registrations r ON r.id = ah.registration_id
+             JOIN opportunities o ON o.id = r.opportunity_id
+             SET ah.attendance_status = :st
+             WHERE ah.registration_id = :rid AND o.organization_id = :oid
+               AND ah.verification_status <> \'verified\''
+        );
+        $up->execute(['st' => $status, 'rid' => $registrationId, 'oid' => $organizationId]);
+        return true;
     }
 
     /**
@@ -61,7 +89,7 @@ final class HourModel
     }
 
     /**
-     * Organization rejects hours.
+     * Organization rejects hours. Restricts to unverified and pending records.
      */
     public function reject(int $registrationId, int $organizationId): bool
     {
@@ -69,20 +97,21 @@ final class HourModel
                 JOIN registrations r ON r.id = ah.registration_id
                 JOIN opportunities o ON o.id = r.opportunity_id
                 SET ah.hours_verified = NULL, ah.verification_status = \'rejected\', ah.verified_at = NULL
-                WHERE ah.registration_id = :rid AND o.organization_id = :oid';
+                WHERE ah.registration_id = :rid AND o.organization_id = :oid
+                  AND ah.verification_status IN (\'unverified\', \'pending\')';
         $st = $this->db->prepare($sql);
         $st->execute(['rid' => $registrationId, 'oid' => $organizationId]);
         return $st->rowCount() === 1;
     }
 
-    /** @return float Official total: verified rows only. */
+    /** @return float Official total: verified rows only, active registrations only. */
     public function verifiedTotalForVolunteer(int $volunteerId): float
     {
         $st = $this->db->prepare(
             'SELECT COALESCE(SUM(ah.hours_verified),0)
              FROM attendance_and_hours ah
              JOIN registrations r ON r.id = ah.registration_id
-             WHERE r.volunteer_id = :vid AND ah.verification_status = \'verified\''
+             WHERE r.volunteer_id = :vid AND r.status = \'registered\' AND ah.verification_status = \'verified\''
         );
         $st->execute(['vid' => $volunteerId]);
         return (float) $st->fetchColumn();
@@ -95,7 +124,7 @@ final class HourModel
             'SELECT COALESCE(SUM(ah.hours_claimed),0)
              FROM attendance_and_hours ah
              JOIN registrations r ON r.id = ah.registration_id
-             WHERE r.volunteer_id = :vid AND ah.verification_status IN (\'unverified\',\'pending\')'
+             WHERE r.volunteer_id = :vid AND r.status = \'registered\' AND ah.verification_status IN (\'unverified\',\'pending\')'
         );
         $st->execute(['vid' => $volunteerId]);
         return (float) $st->fetchColumn();
@@ -105,7 +134,10 @@ final class HourModel
     public function platformTotalVerified(): float
     {
         $val = $this->db->query(
-            'SELECT COALESCE(SUM(hours_verified),0) FROM attendance_and_hours WHERE verification_status = \'verified\''
+            'SELECT COALESCE(SUM(ah.hours_verified),0)
+             FROM attendance_and_hours ah
+             JOIN registrations r ON r.id = ah.registration_id
+             WHERE r.status = \'registered\' AND ah.verification_status = \'verified\''
         )->fetchColumn();
         return (float) $val;
     }
@@ -118,7 +150,7 @@ final class HourModel
              FROM attendance_and_hours ah
              JOIN registrations r ON r.id = ah.registration_id
              JOIN opportunities o ON o.id = r.opportunity_id
-             WHERE o.organization_id = :oid AND ah.verification_status = \'verified\''
+             WHERE o.organization_id = :oid AND r.status = \'registered\' AND ah.verification_status = \'verified\''
         );
         $st->execute(['oid' => $orgId]);
         return (float) $st->fetchColumn();
@@ -137,6 +169,7 @@ final class HourModel
                 JOIN opportunities o ON o.id = r.opportunity_id
                 JOIN users u ON u.id = r.volunteer_id
                 WHERE o.organization_id = :oid
+                  AND r.status = \'registered\'
                   AND ah.verification_status = \'verified\'';
         $params = ['oid' => $organizationId];
         if ($from !== null && $from !== '') { $sql .= ' AND o.start_at >= :from'; $params['from'] = $from; }

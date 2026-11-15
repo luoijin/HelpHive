@@ -2,6 +2,16 @@
 
 ## [Unreleased]
 
+### Fixed
+- **G-03 (Exports)**: Fixed argument count mismatch in `ReportController::pdf` by loading organization details and passing `$org['name']` to `PdfExporter::download($rows, $orgName, $filename)`.
+- **G-01 (Visibility)**: Added `OpportunityModel::findPublished($id)` to restrict public `GET /opportunities/{id}` views to opportunities with status `published`, keeping drafts and cancelled opportunities inaccessible by direct URL while preserving `find()` for owner routes.
+- **G-02 (Approval)**: Enforced organization approval checks in `OrgOpportunityController`. In `store` and `update`, unapproved organizations have opportunities forced to `draft` with an informational flash message; in `publish`, publishing is blocked with an error flash until administrator approval.
+- **G-04 (Session)**: Fixed session corruption upon organization registration in `AuthController::register` by calling `Auth::login($userModel->findById($id))` after `updateRole`, ensuring the session stores sanitized `id`, `name`, and `role` attributes and header displays the user's name properly.
+- **G-05 (Hour integrity)**: Added verification state check in `HourModel::markAttendance` restricting modifications to `verification_status <> 'verified'`, preventing verified hours from being compromised if attendance is changed.
+- **G-06 (Hour integrity)**: Guarded `HourModel::reject` to only accept unverified or pending hours (`verification_status IN ('unverified', 'pending')`), preventing arbitrary modification of already verified records without an audit trail.
+- **G-07 (Hour integrity)**: Hardened `HourModel::claimHours` by joining `opportunities` and enforcing `r.status = 'registered'`, `o.start_at <= NOW()`, and `ah.attendance_status <> 'absent'`, preventing volunteers from claiming hours on cancelled registrations, future events, or when marked absent.
+- **G-08 (Hour integrity)**: Filtered verified totals and reports with `AND r.status = 'registered'` across `verifiedTotalForVolunteer`, `pendingTotalForVolunteer`, `platformTotalVerified`, `verifiedTotalForOrg`, and `reportRows`. Also guarded `RegistrationModel::cancel` to disallow cancellation once hours are verified.
+
 ### Documentation
 - Rewrote `ARCHITECTURE.md` to match the current codebase: layers, request lifecycle, roles, invariants and where they are enforced, security controls, frontend structure, repository layout, document map.
 - Regenerated `API_ROUTING.md` from `config/routes.php` (44 routes, access levels, `{id}` meaning per route, route to view map).

@@ -165,7 +165,7 @@ final class OpportunityController
         $opp = null;
         try {
             $model = new OpportunityModel(Database::connection());
-            $opp = $model->find($id);
+            $opp = $model->findPublished($id);
         } catch (\PDOException $e) {
             error_log('Database connection error in OpportunityController@show: ' . $e->getMessage());
         }

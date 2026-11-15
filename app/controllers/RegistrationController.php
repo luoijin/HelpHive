@@ -56,7 +56,7 @@ final class RegistrationController
         if ($cancelled) {
             Flash::success('Your registration was cancelled successfully.');
         } else {
-            Flash::error('Could not cancel this registration.');
+            Flash::error('Could not cancel this registration. Verified registrations cannot be cancelled.');
         }
 
         header('Location: /volunteer/registrations');
