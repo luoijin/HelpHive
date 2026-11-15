@@ -7,7 +7,7 @@ declare(strict_types=1);
 return [
     'driver'   => 'mysql',
     'host'     => env('DB_HOST', '127.0.0.1'),
-    'port'     => (int) env('DB_PORT', 3306),
+    'port'     => (int) env('DB_PORT', '3306'),
     'database' => env('DB_NAME', 'helphive'),
     'username' => env('DB_USER', 'root'),
     'password' => env('DB_PASS', ''),

@@ -5,8 +5,20 @@ final class OpportunityModel
 {
     public function __construct(private PDO $db) {}
 
-    public function allPublished(?string $keyword = null, ?string $cause = null, ?string $location = null, ?string $dateFrom = null, ?string $dateTo = null): array
+    private function escapeLike(string $value): string
     {
+        return str_replace(['\\', '%', '_'], ['\\\\', '\\%', '\\_'], $value);
+    }
+
+    public function allPublished(
+        ?string $keyword = null,
+        ?string $cause = null,
+        ?string $location = null,
+        ?string $dateFrom = null,
+        ?string $dateTo = null,
+        int $limit = 0,
+        int $offset = 0
+    ): array {
         $sql = 'SELECT o.*, org.name AS org_name
                 FROM opportunities o
                 JOIN organizations org ON org.id = o.organization_id
@@ -14,8 +26,10 @@ final class OpportunityModel
         $params = [];
 
         if (!empty($keyword)) {
-            $sql .= ' AND (o.title LIKE :kw OR o.description LIKE :kw)';
-            $params['kw'] = '%' . $keyword . '%';
+            $escaped = $this->escapeLike(trim($keyword));
+            $sql .= ' AND (o.title LIKE :kw1 OR o.description LIKE :kw2)';
+            $params['kw1'] = '%' . $escaped . '%';
+            $params['kw2'] = '%' . $escaped . '%';
         }
         if (!empty($cause)) {
             $sql .= ' AND o.cause_area = :cause';
@@ -23,7 +37,7 @@ final class OpportunityModel
         }
         if (!empty($location) && trim($location) !== '' && strtolower(trim($location)) !== 'any') {
             $sql .= ' AND o.location LIKE :loc';
-            $params['loc'] = '%' . trim($location) . '%';
+            $params['loc'] = '%' . $this->escapeLike(trim($location)) . '%';
         }
         if (!empty($dateFrom)) {
             $sql .= ' AND o.start_at >= :date_from';
@@ -35,9 +49,54 @@ final class OpportunityModel
         }
 
         $sql .= ' ORDER BY o.start_at ASC';
+        if ($limit > 0) {
+            $sql .= ' LIMIT ' . (int) $limit . ' OFFSET ' . (int) $offset;
+        }
+
         $st = $this->db->prepare($sql);
         $st->execute($params);
         return $st->fetchAll();
+    }
+
+    public function countPublished(
+        ?string $keyword = null,
+        ?string $cause = null,
+        ?string $location = null,
+        ?string $dateFrom = null,
+        ?string $dateTo = null
+    ): int {
+        $sql = 'SELECT COUNT(*)
+                FROM opportunities o
+                JOIN organizations org ON org.id = o.organization_id
+                WHERE o.status = \'published\'';
+        $params = [];
+
+        if (!empty($keyword)) {
+            $escaped = $this->escapeLike(trim($keyword));
+            $sql .= ' AND (o.title LIKE :kw1 OR o.description LIKE :kw2)';
+            $params['kw1'] = '%' . $escaped . '%';
+            $params['kw2'] = '%' . $escaped . '%';
+        }
+        if (!empty($cause)) {
+            $sql .= ' AND o.cause_area = :cause';
+            $params['cause'] = $cause;
+        }
+        if (!empty($location) && trim($location) !== '' && strtolower(trim($location)) !== 'any') {
+            $sql .= ' AND o.location LIKE :loc';
+            $params['loc'] = '%' . $this->escapeLike(trim($location)) . '%';
+        }
+        if (!empty($dateFrom)) {
+            $sql .= ' AND o.start_at >= :date_from';
+            $params['date_from'] = date('Y-m-d 00:00:00', strtotime($dateFrom));
+        }
+        if (!empty($dateTo)) {
+            $sql .= ' AND o.start_at <= :date_to';
+            $params['date_to'] = date('Y-m-d 23:59:59', strtotime($dateTo));
+        }
+
+        $st = $this->db->prepare($sql);
+        $st->execute($params);
+        return (int) $st->fetchColumn();
     }
 
     public function findPublished(int $id): ?array

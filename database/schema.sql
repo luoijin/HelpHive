@@ -93,3 +93,12 @@ CREATE TABLE notifications (
   CONSTRAINT fk_notif_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
   INDEX idx_notif_user_read (user_id, is_read)
 ) ENGINE=InnoDB;
+
+CREATE TABLE saved_opportunities (
+  user_id INT UNSIGNED NOT NULL,
+  opportunity_id INT UNSIGNED NOT NULL,
+  created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (user_id, opportunity_id),
+  CONSTRAINT fk_so_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+  CONSTRAINT fk_so_opp FOREIGN KEY (opportunity_id) REFERENCES opportunities(id) ON DELETE CASCADE
+) ENGINE=InnoDB;

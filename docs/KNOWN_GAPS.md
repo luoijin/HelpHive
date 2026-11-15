@@ -30,17 +30,16 @@ All P1 items have been addressed and moved to the Resolved section below.
 | G-13 | Cancel opportunity | Cancelling an opportunity left registrations as `registered` and sent no notification | Implemented atomic `OpportunityModel::cancelOpportunity()` transaction setting opportunity and all active registrations to `cancelled`, and notified all affected registered volunteers |
 | G-14 | Search | Date filter was missing from server and client queries | Added `date_from` and `date_to` parameters to `OpportunityModel::allPublished`, `OpportunityController::index`, UI date range picker, and `app.js` filtering pipeline |
 | G-15 | Search | Search mixed real and hard-coded sample data; `OpportunityController` fell back to 8 sample opportunities and `app.js` merged a static dataset | Removed the hard-coded sample opportunity fallback lists from `OpportunityController` (`index` and `show`), updated `app.js` `getAllOpportunities()` to consume only `window.SERVER_OPPORTUNITIES`, and added clean empty-state UI for zero search results |
+| G-11 | Opportunity edit | Editing was allowed after volunteers registered; capacity could drop below registrations; status could be set to completed/cancelled via form | Enforced capacity constraint (`capacity >= registered_count`), whitelisted edit form statuses to `draft` and `published`, and blocked reverting to draft when volunteers are registered |
+| G-16 | Search | Results were not paginated; pagination was static; LIKE wildcards were unescaped | Escaped SQL LIKE wildcards (`%`, `_`, `\`) in keyword and location search queries, added server-side LIMIT/OFFSET pagination in `OpportunityModel` and `OpportunityController`, and implemented dynamic client-side pagination in `app.js` and `index.php` |
+| G-17 | Saved | Bookmarks lived only in JS memory; `/volunteer/saved` received an empty list | Created `saved_opportunities` table with composite PK and foreign keys, created `SavedOpportunityModel`, wired `POST /opportunities/{id}/save` and `/unsave` routes, updated `VolunteerController@saved` to query database rows, and synced persistence with client-side UI |
+| G-18 | Dashboard | Organization dashboard "volunteers" figure was `opportunity count * 8` | Replaced hardcoded formula with `RegistrationModel::totalRegisteredForOrg($orgId)`, accurately counting active (`status = 'registered'`) registrations |
+| G-19 | Roles | Registering an organization caused user to lose access to `/volunteer/*` and their volunteer history | Implemented dual capacity policy allowing organization users to access `/volunteer/*` routes and volunteer for community opportunities outside their own organization, and added volunteer links to their profile dropdown |
+| G-20 | Views | `opportunities/register.php` was not rendered by any controller | Wired `opportunities/register.php` (Figma 381:11859) to `GET /opportunities/{id}/register` with capacity, deadline, and ownership checks, pre-populating volunteer account details |
 
 ## P2 - Correct behavior
 
-| ID | Area | Current behavior | Fix |
-|---|---|---|---|
-| G-11 | Opportunity edit | Editing is allowed after volunteers registered; capacity can drop below current registrations; `status` can be set to `completed` or `cancelled` through the form | Reject capacity below the registered count; accept only whitelisted status transitions |
-| G-16 | Search | Results are not paginated; the pagination control is static; `LIKE` wildcards are unescaped; FULLTEXT index unused | Add `LIMIT/OFFSET`, escape `%` and `_`, optionally switch the keyword to `MATCH ... AGAINST` |
-| G-17 | Saved | Bookmarks live only in JavaScript memory; `/volunteer/saved` always receives an empty list | Create `saved_opportunities (user_id, opportunity_id, created_at)` with a composite primary key and two routes (save, unsave) |
-| G-18 | Dashboard | Organization dashboard "volunteers" figure is `opportunity count * 8` | Replace with a `COUNT` of `registered` registrations for the organization's opportunities |
-| G-19 | Roles | Registering an organization changes the user's role from `volunteer` to `organization`; the person loses access to `/volunteer/*` and their existing registrations and hours | Decide the policy: separate accounts for organizations, or allow a user to hold both capacities |
-| G-20 | Views | `opportunities/register.php` is not rendered by any controller | Wire it to a `GET /opportunities/{id}/register` route or remove it |
+All P2 items have been addressed and moved to the Resolved section below.
 
 ## P3 - Hardening
 

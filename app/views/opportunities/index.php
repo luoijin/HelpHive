@@ -8,6 +8,18 @@ $selectedCause = $_GET['cause'] ?? '';
 $selectedDistance = $_GET['distance'] ?? '';
 $dateFrom = $_GET['date_from'] ?? '';
 $dateTo = $_GET['date_to'] ?? '';
+
+$page = (int) ($currentPage ?? 1);
+$totalP = (int) ($totalPages ?? 1);
+$totalNum = (int) ($totalCount ?? count($opportunitiesList));
+$savedList = $savedOpportunityIds ?? [];
+
+$queryParams = $_GET;
+$buildPageUrl = function(int $p) use ($queryParams): string {
+    $params = $queryParams;
+    $params['page'] = $p;
+    return '/opportunities?' . http_build_query($params);
+};
 ?>
 <!-- 2. SEARCH OPPORTUNITIES VIEW (Figma 308:40548) -->
 <section id="view-search" class="page-view active" style="display: block;">
@@ -192,7 +204,7 @@ $dateTo = $_GET['date_to'] ?? '';
     <!-- Result Badge & Counter + Reset All Filters -->
     <div class="results-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px;">
       <div class="results-badge" id="results-count-badge">
-        <?= count($opportunitiesList) . ' ' . (count($opportunitiesList) === 1 ? 'Opportunity' : 'Opportunities') ?>
+        <?= $totalNum . ' ' . ($totalNum === 1 ? 'Opportunity' : 'Opportunities') ?>
       </div>
       <button type="button" class="btn btn-ghost btn-sm btn-reset-all" id="btn-reset-all-filters" onclick="resetAllFilters()" style="display: inline-flex; align-items: center; gap: 6px; padding: 6px 14px; font-size: 13px; border-radius: var(--radius-full); cursor: pointer; border: 1px solid var(--slate-border); background: #ffffff;">
         <i data-lucide="rotate-ccw" style="width: 14px; height: 14px;"></i> Reset All Filters
@@ -203,6 +215,7 @@ $dateTo = $_GET['date_to'] ?? '';
     <div class="opportunities-list" id="opportunities-container">
       <?php if (!empty($opportunitiesList)): ?>
         <?php foreach ($opportunitiesList as $opp): ?>
+          <?php $isSaved = in_array((int) $opp['id'], $savedList, true); ?>
           <article class="opportunity-card" onclick="window.location.href='/opportunities/<?= (int) $opp['id'] ?>'">
             <div class="opp-thumbnail">
               <img src="<?= e($opp['image_url'] ?? asset('assets/images/3f7a0de487a85a9f0d684274dbdcef0b89a3b92d.png')) ?>" alt="<?= e($opp['title']) ?>" onerror="this.src='https://images.unsplash.com/photo-1618477461853-cf6ed80faba5?w=600&auto=format&fit=crop&q=80'">
@@ -213,8 +226,10 @@ $dateTo = $_GET['date_to'] ?? '';
                   <h3 class="opp-title"><?= e($opp['title']) ?></h3>
                   <span class="opp-org"><?= e($opp['org_name'] ?? 'HelpHive Partner') ?></span>
                 </div>
-                <button type="button" class="bookmark-btn" onclick="event.stopPropagation(); toggleSaveOpportunity(event, '<?= (int) $opp['id'] ?>')">
-                  <i data-lucide="bookmark"></i>
+                <button type="button" class="bookmark-btn <?= $isSaved ? 'saved' : '' ?>" 
+                        title="<?= $isSaved ? 'Remove Bookmark' : 'Save Opportunity' ?>" 
+                        onclick="event.stopPropagation(); toggleSaveOpportunity(event, '<?= (int) $opp['id'] ?>')">
+                  <i data-lucide="bookmark" <?= $isSaved ? 'style="fill: var(--primary-yellow);"' : '' ?>></i>
                 </button>
               </div>
 
@@ -243,10 +258,22 @@ $dateTo = $_GET['date_to'] ?? '';
     </div>
 
     <!-- Pagination -->
-    <div class="pagination-wrap">
-      <button type="button" class="pagination-btn disabled" id="prev-page"><i data-lucide="chevron-left"></i></button>
-      <button type="button" class="pagination-btn active">1</button>
-      <button type="button" class="pagination-btn disabled" id="next-page"><i data-lucide="chevron-right"></i></button>
+    <div class="pagination-wrap" id="pagination-controls">
+      <?php if ($page > 1): ?>
+        <a href="<?= e($buildPageUrl($page - 1)) ?>" class="pagination-btn" id="prev-page" title="Previous Page"><i data-lucide="chevron-left"></i></a>
+      <?php else: ?>
+        <button type="button" class="pagination-btn disabled" id="prev-page" title="Previous Page"><i data-lucide="chevron-left"></i></button>
+      <?php endif; ?>
+
+      <?php for ($p = 1; $p <= $totalP; $p++): ?>
+        <a href="<?= e($buildPageUrl($p)) ?>" class="pagination-btn <?= $p === $page ? 'active' : '' ?>" style="text-decoration: none;"><?= $p ?></a>
+      <?php endfor; ?>
+
+      <?php if ($page < $totalP): ?>
+        <a href="<?= e($buildPageUrl($page + 1)) ?>" class="pagination-btn" id="next-page" title="Next Page"><i data-lucide="chevron-right"></i></a>
+      <?php else: ?>
+        <button type="button" class="pagination-btn disabled" id="next-page" title="Next Page"><i data-lucide="chevron-right"></i></button>
+      <?php endif; ?>
     </div>
   </div>
 
@@ -264,5 +291,8 @@ $dateTo = $_GET['date_to'] ?? '';
 
   <script>
     window.SERVER_OPPORTUNITIES = <?= json_encode($opportunitiesList) ?>;
+    window.SAVED_OPPORTUNITY_IDS = <?= json_encode($savedList) ?>;
+    window.SERVER_PAGE = <?= (int) $page ?>;
+    window.TOTAL_PAGES = <?= (int) $totalP ?>;
   </script>
 </section>

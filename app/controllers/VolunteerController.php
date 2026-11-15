@@ -6,7 +6,7 @@ final class VolunteerController
     /** GET /volunteer/dashboard */
     public function dashboard(): void
     {
-        $user = Auth::requireRole(Auth::VOLUNTEER);
+        $user = Auth::requireRole(Auth::VOLUNTEER, Auth::ORGANIZATION);
         $hourModel = new HourModel(Database::connection());
         $regModel = new RegistrationModel(Database::connection());
 
@@ -25,7 +25,7 @@ final class VolunteerController
     /** GET /volunteer/registrations */
     public function registrations(): void
     {
-        $user = Auth::requireRole(Auth::VOLUNTEER);
+        $user = Auth::requireRole(Auth::VOLUNTEER, Auth::ORGANIZATION);
         $regModel = new RegistrationModel(Database::connection());
         $registrations = $regModel->forVolunteer((int) $user['id']);
 
@@ -38,7 +38,7 @@ final class VolunteerController
     /** GET /volunteer/hours — Verified and pending hours shown separately */
     public function hours(): void
     {
-        $user = Auth::requireRole(Auth::VOLUNTEER);
+        $user = Auth::requireRole(Auth::VOLUNTEER, Auth::ORGANIZATION);
         $hourModel = new HourModel(Database::connection());
         $regModel = new RegistrationModel(Database::connection());
 
@@ -57,17 +57,64 @@ final class VolunteerController
     /** GET /volunteer/saved */
     public function saved(): void
     {
-        $user = Auth::requireRole(Auth::VOLUNTEER);
+        $user = Auth::requireRole(Auth::VOLUNTEER, Auth::ORGANIZATION);
+        $savedModel = new SavedOpportunityModel(Database::connection());
+        $savedList = $savedModel->allForUser((int) $user['id']);
+
         view('volunteer/saved', [
             'title' => 'Saved Opportunities — HelpHive',
-            'savedOpportunities' => [],
+            'savedOpportunities' => $savedList,
         ]);
+    }
+
+    /** POST /opportunities/{id}/save */
+    public function saveOpportunity(int $id): void
+    {
+        $user = Auth::requireRole(Auth::VOLUNTEER, Auth::ORGANIZATION);
+        $savedModel = new SavedOpportunityModel(Database::connection());
+        $savedModel->save((int) $user['id'], $id);
+
+        $isAjax = (!empty($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) === 'xmlhttprequest')
+            || (isset($_SERVER['HTTP_ACCEPT']) && str_contains($_SERVER['HTTP_ACCEPT'], 'application/json'));
+
+        if ($isAjax) {
+            header('Content-Type: application/json');
+            echo json_encode(['status' => 'ok', 'saved' => true, 'id' => $id]);
+            exit;
+        }
+
+        Flash::success('Opportunity saved to your bookmarks!');
+        $referer = $_SERVER['HTTP_REFERER'] ?? '/opportunities/' . $id;
+        header('Location: ' . $referer);
+        exit;
+    }
+
+    /** POST /opportunities/{id}/unsave */
+    public function unsaveOpportunity(int $id): void
+    {
+        $user = Auth::requireRole(Auth::VOLUNTEER, Auth::ORGANIZATION);
+        $savedModel = new SavedOpportunityModel(Database::connection());
+        $savedModel->unsave((int) $user['id'], $id);
+
+        $isAjax = (!empty($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) === 'xmlhttprequest')
+            || (isset($_SERVER['HTTP_ACCEPT']) && str_contains($_SERVER['HTTP_ACCEPT'], 'application/json'));
+
+        if ($isAjax) {
+            header('Content-Type: application/json');
+            echo json_encode(['status' => 'ok', 'saved' => false, 'id' => $id]);
+            exit;
+        }
+
+        Flash::info('Opportunity removed from saved bookmarks.');
+        $referer = $_SERVER['HTTP_REFERER'] ?? '/volunteer/saved';
+        header('Location: ' . $referer);
+        exit;
     }
 
     /** POST /volunteer/hours/{id}/claim */
     public function claimHours(int $id): void
     {
-        $user = Auth::requireRole(Auth::VOLUNTEER);
+        $user = Auth::requireRole(Auth::VOLUNTEER, Auth::ORGANIZATION);
         $hours = (float) ($_POST['hours'] ?? 0);
 
         if ($hours <= 0 || $hours > 24) {

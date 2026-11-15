@@ -137,4 +137,30 @@ final class RegistrationModel
         $st->execute(['vid' => $volunteerId]);
         return $st->fetchAll();
     }
+
+    /**
+     * Count active ('registered') registrations for a specific opportunity.
+     */
+    public function countRegisteredForOpportunity(int $opportunityId): int
+    {
+        $st = $this->db->prepare(
+            'SELECT COUNT(*) FROM registrations WHERE opportunity_id = :id AND status = \'registered\''
+        );
+        $st->execute(['id' => $opportunityId]);
+        return (int) $st->fetchColumn();
+    }
+
+    /**
+     * Count active ('registered') registrations across all opportunities owned by an organization.
+     */
+    public function totalRegisteredForOrg(int $orgId): int
+    {
+        $sql = 'SELECT COUNT(*)
+                FROM registrations r
+                JOIN opportunities o ON o.id = r.opportunity_id
+                WHERE o.organization_id = :oid AND r.status = \'registered\'';
+        $st = $this->db->prepare($sql);
+        $st->execute(['oid' => $orgId]);
+        return (int) $st->fetchColumn();
+    }
 }

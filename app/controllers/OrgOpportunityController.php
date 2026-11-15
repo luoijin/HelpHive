@@ -71,7 +71,7 @@ final class OrgOpportunityController
             return ['data' => [], 'error' => 'Volunteer capacity must be at least 1.'];
         }
 
-        if (!in_array($status, ['draft', 'published', 'cancelled', 'completed'], true)) {
+        if (!in_array($status, ['draft', 'published'], true)) {
             $status = 'draft';
         }
 
@@ -171,9 +171,19 @@ final class OrgOpportunityController
             exit('Forbidden: you do not own this opportunity.');
         }
 
+        if (in_array($opp['status'], ['cancelled', 'completed'], true)) {
+            Flash::error('Cancelled or completed opportunities cannot be edited.');
+            header('Location: /org/opportunities');
+            exit;
+        }
+
+        $regModel = new RegistrationModel(Database::connection());
+        $registeredCount = $regModel->countRegisteredForOpportunity($id);
+
         view('org/edit_opportunity', [
             'title' => 'Edit Opportunity — HelpHive',
             'opportunity' => $opp,
+            'registeredCount' => $registeredCount,
         ]);
     }
 
@@ -192,6 +202,35 @@ final class OrgOpportunityController
             exit('Forbidden: you do not own this opportunity.');
         }
 
+        if (in_array($existingOpp['status'], ['cancelled', 'completed'], true)) {
+            Flash::error('Cancelled or completed opportunities cannot be edited.');
+            header('Location: /org/opportunities');
+            exit;
+        }
+
+        $regModel = new RegistrationModel(Database::connection());
+        $registeredCount = $regModel->countRegisteredForOpportunity($id);
+
+        $requestedCapacity = (int) ($_POST['capacity'] ?? 0);
+        if ($requestedCapacity < $registeredCount) {
+            Flash::error("Volunteer capacity cannot be reduced below the number of currently registered volunteers ({$registeredCount}).");
+            header('Location: /org/opportunities/' . $id . '/edit');
+            exit;
+        }
+
+        $requestedStatus = trim($_POST['status'] ?? 'draft');
+        if (!in_array($requestedStatus, ['draft', 'published'], true)) {
+            Flash::error('Invalid status transition. Opportunities can only be saved as draft or published via the form. Use the Cancel action to cancel an event.');
+            header('Location: /org/opportunities/' . $id . '/edit');
+            exit;
+        }
+
+        if ($existingOpp['status'] === 'published' && $requestedStatus === 'draft' && $registeredCount > 0) {
+            Flash::error('Cannot revert opportunity to draft status while volunteers are registered.');
+            header('Location: /org/opportunities/' . $id . '/edit');
+            exit;
+        }
+
         $validation = $this->validateOpportunityInput($_POST, $orgId, $isApproved);
         if ($validation['error'] !== null) {
             Flash::error($validation['error']);
@@ -200,7 +239,6 @@ final class OrgOpportunityController
         }
 
         $data = $validation['data'];
-        $requestedStatus = $_POST['status'] ?? 'draft';
 
         try {
             $oppModel->update($id, $orgId, $data);

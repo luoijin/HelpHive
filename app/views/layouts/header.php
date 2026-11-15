@@ -88,6 +88,25 @@ $userName = $currentUser['name'] ?? 'Volunteer';
                   <i data-lucide="trending-up" class="menu-icon"></i>
                   <span>Participation Reports</span>
                 </a>
+
+                <!-- MY VOLUNTEERING (Dual Capacity) -->
+                <div class="menu-section-header">MY VOLUNTEERING</div>
+                <a href="/volunteer/dashboard" class="dropdown-link">
+                  <i data-lucide="layout-dashboard" class="menu-icon"></i>
+                  <span>Volunteer Dashboard</span>
+                </a>
+                <a href="/volunteer/saved" class="dropdown-link">
+                  <i data-lucide="bookmark" class="menu-icon"></i>
+                  <span>Saved Opportunities</span>
+                </a>
+                <a href="/volunteer/registrations" class="dropdown-link">
+                  <i data-lucide="clipboard-list" class="menu-icon"></i>
+                  <span>My Applications</span>
+                </a>
+                <a href="/volunteer/hours" class="dropdown-link">
+                  <i data-lucide="clock" class="menu-icon"></i>
+                  <span>My Service Hours</span>
+                </a>
               <?php endif; ?>
 
               <?php if ($userRole === Auth::ADMIN): ?>

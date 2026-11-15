@@ -95,12 +95,9 @@ $opp = $opportunity ?? [
         <!-- Action Button -->
         <div class="detail-cta-wrap">
           <?php if (Auth::user()): ?>
-            <form action="/opportunities/<?= (int) $opp['id'] ?>/register" method="POST">
-              <?= Csrf::field() ?>
-              <button type="submit" class="btn btn-cause btn-full" style="padding: 16px; font-size: 18px;">
-                Confirm Registration Now
-              </button>
-            </form>
+            <a href="/opportunities/<?= (int) $opp['id'] ?>/register" class="btn btn-cause btn-full" style="padding: 16px; font-size: 18px; text-decoration: none; display: flex; align-items: center; justify-content: center; text-align: center;">
+              Register for this Opportunity
+            </a>
           <?php else: ?>
             <button type="button" class="btn btn-cause btn-full" style="padding: 16px; font-size: 18px;" onclick="openModal('login-modal')">
               Log In to Register

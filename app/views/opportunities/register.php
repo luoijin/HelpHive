@@ -8,6 +8,11 @@ $opp = $opportunity ?? [
     'start_at' => '2026-10-31 07:00:00',
 ];
 $currentUser = Auth::user();
+$userEmail = $currentUser['email'] ?? '';
+if ($userEmail === '' && !empty($currentUser['id'])) {
+    $u = (new UserModel(Database::connection()))->findById((int) $currentUser['id']);
+    $userEmail = $u['email'] ?? '';
+}
 ?>
 <!-- 4. VOLUNTEER REGISTRATION FORM (Figma 381:11859) -->
 <section id="view-volunteer-reg" class="page-view active" style="display: block;">
@@ -44,7 +49,7 @@ $currentUser = Auth::user();
 
           <div class="form-group">
             <label for="reg-email">Email Address*</label>
-            <input type="email" id="reg-email" name="email" required placeholder="johnSmith@example.com" value="<?= e($currentUser['email'] ?? '') ?>">
+            <input type="email" id="reg-email" name="email" required placeholder="johnSmith@example.com" value="<?= e($userEmail) ?>">
           </div>
 
           <div class="form-group">

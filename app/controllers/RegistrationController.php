@@ -3,15 +3,73 @@ declare(strict_types=1);
 
 final class RegistrationController
 {
-    /** POST /opportunities/{id}/register — Volunteer role required. */
+    /** GET /opportunities/{id}/register — Show registration form. */
+    public function showRegister(int $id): void
+    {
+        $user = Auth::requireRole(Auth::VOLUNTEER, Auth::ORGANIZATION);
+
+        $oppModel = new OpportunityModel(Database::connection());
+        $opp = $oppModel->findPublished($id);
+
+        if (!$opp) {
+            http_response_code(404);
+            Flash::error('Opportunity not found or no longer open.');
+            header('Location: /opportunities');
+            exit;
+        }
+
+        // Prevent organizers from registering for their own opportunity
+        if (($user['role'] ?? '') === Auth::ORGANIZATION) {
+            $orgId = (new OrganizationModel(Database::connection()))->idForUser((int) $user['id']);
+            if ((int) $opp['organization_id'] === $orgId) {
+                Flash::error('You cannot register for an opportunity hosted by your own organization.');
+                header('Location: /opportunities/' . $id);
+                exit;
+            }
+        }
+
+        // Check registration deadline
+        if (new DateTime() > new DateTime($opp['registration_deadline'])) {
+            Flash::error('The registration deadline for this opportunity has passed.');
+            header('Location: /opportunities/' . $id);
+            exit;
+        }
+
+        // Check capacity
+        $regModel = new RegistrationModel(Database::connection());
+        $regCount = $regModel->countRegisteredForOpportunity($id);
+        if ($regCount >= (int) $opp['capacity']) {
+            Flash::error('This opportunity has reached maximum capacity.');
+            header('Location: /opportunities/' . $id);
+            exit;
+        }
+
+        view('opportunities/register', [
+            'title' => 'Register: ' . $opp['title'] . ' — HelpHive',
+            'opportunity' => $opp,
+        ]);
+    }
+
+    /** POST /opportunities/{id}/register — Volunteer or Organization user. */
     public function store(int $id): void
     {
-        $user = Auth::requireRole(Auth::VOLUNTEER);
-        $regModel = new RegistrationModel(Database::connection());
-        $result = $regModel->register($id, (int) $user['id']);
+        $user = Auth::requireRole(Auth::VOLUNTEER, Auth::ORGANIZATION);
 
         $oppModel = new OpportunityModel(Database::connection());
         $opp = $oppModel->find($id);
+
+        // Prevent organizers from registering for their own opportunity
+        if (($user['role'] ?? '') === Auth::ORGANIZATION) {
+            $orgId = (new OrganizationModel(Database::connection()))->idForUser((int) $user['id']);
+            if ($opp && (int) $opp['organization_id'] === $orgId) {
+                Flash::error('You cannot register for an opportunity hosted by your own organization.');
+                header('Location: /opportunities/' . $id);
+                exit;
+            }
+        }
+
+        $regModel = new RegistrationModel(Database::connection());
+        $result = $regModel->register($id, (int) $user['id']);
         $title = $opp['title'] ?? 'Volunteer Activity';
 
         switch ($result) {
@@ -69,10 +127,10 @@ final class RegistrationController
         }
     }
 
-    /** POST /registrations/{id}/cancel — Volunteer owner only. */
+    /** POST /registrations/{id}/cancel — Volunteer or Organization owner of registration. */
     public function cancel(int $id): void
     {
-        $user = Auth::requireRole(Auth::VOLUNTEER);
+        $user = Auth::requireRole(Auth::VOLUNTEER, Auth::ORGANIZATION);
         $regModel = new RegistrationModel(Database::connection());
         $reg = $regModel->findById($id);
         $cancelled = $regModel->cancel($id, (int) $user['id']);

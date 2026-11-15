@@ -19,6 +19,8 @@ erDiagram
     registrations ||--o| attendance_and_hours : "tracks"
     users ||--o{ attendance_and_hours : "verifies"
     users ||--o{ notifications : "receives"
+    users ||--o{ saved_opportunities : "bookmarks"
+    opportunities ||--o{ saved_opportunities : "bookmarked_in"
 ```
 
 ---
@@ -141,6 +143,20 @@ In-app alert delivery.
 
 ---
 
+### 7. `saved_opportunities`
+Bookmarked volunteer opportunities.
+
+| Column | Type | Attributes | Description |
+|---|---|---|---|
+| `user_id` | INT UNSIGNED | NOT NULL, PK, FK (`users.id`) | Owning user |
+| `opportunity_id` | INT UNSIGNED | NOT NULL, PK, FK (`opportunities.id`) | Saved event |
+| `created_at` | TIMESTAMP | DEFAULT CURRENT_TIMESTAMP | Bookmark timestamp |
+
+**Constraints:**
+- Composite Primary Key: `(user_id, opportunity_id)`
+
+---
+
 ## Indexing strategy
 
 | Table | Index | Purpose |
@@ -158,6 +174,7 @@ In-app alert delivery.
 | attendance_and_hours | `UNIQUE(registration_id)` | One hours record per registration |
 | attendance_and_hours | `idx_ah_status (verification_status)` | Verified and pending totals, reports |
 | notifications | `idx_notif_user_read (user_id, is_read)` | Unread badge and list |
+| saved_opportunities | `PRIMARY KEY (user_id, opportunity_id)` | Fast bookmark lookup, duplicate prevention |
 
 ## Query rules (hour integrity)
 
@@ -178,9 +195,9 @@ Loads one administrator, three organization accounts with approved organizations
 
 ## Planned schema changes (not in `schema.sql` yet)
 
-| Change | Reason | Gap ID |
-|---|---|---|
-| `saved_opportunities (user_id, opportunity_id, created_at)`, composite PK, FKs to `users` and `opportunities` | Persist bookmarks | G-17 |
-| `opportunities.location_type`, `duration`, `skills` (or removal of those filters) | Back the client-only search filters | G-14 |
-| `organizations.organization_type`, `cause_area` | Currently packed into `description` as `[Type: ...] [Cause: ...]` | see `docs/FLOW_AUTH.md` |
-| Optional `hour_audit_log` | Record who changed attendance or revoked verified hours | G-05, G-06 |
+| Change | Reason | Gap ID | Status |
+|---|---|---|---|
+| `saved_opportunities (user_id, opportunity_id, created_at)`, composite PK, FKs to `users` and `opportunities` | Persist bookmarks | G-17 | Implemented |
+| `opportunities.location_type`, `duration`, `skills` (or removal of those filters) | Back the client-only search filters | G-14 | Planned |
+| `organizations.organization_type`, `cause_area` | Currently packed into `description` as `[Type: ...] [Cause: ...]` | see `docs/FLOW_AUTH.md` | Planned |
+| Optional `hour_audit_log` | Record who changed attendance or revoked verified hours | G-05, G-06 | Planned |

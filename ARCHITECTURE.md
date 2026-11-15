@@ -150,7 +150,7 @@ The role is stored in the session. If an administrator changes a user's role or 
 - Views receive data only through `view('path', $data)`; `render()` includes partials without a layout.
 - `app.js` owns client behaviour: modal handling, the role selector, location and distance dropdowns, filter chips, the "Reset All Filters" control, URL query sync, toast messages, and bookmark state.
 - Search is a hybrid of server and client filtering; see `docs/FLOW_SEARCH.md`.
-- Bookmarks ("Saved") exist only in browser memory. There is no saved-opportunities table.
+- Bookmarks ("Saved") are persisted in the `saved_opportunities` database table and synced with client state.
 
 ## 9. Repository layout (current)
 
@@ -173,7 +173,7 @@ HelpHive/
     |-- controllers/  Home, Auth, Opportunity, Registration, Volunteer,
     |                 OrgDashboard, OrgProfile, OrgOpportunity, Attendance,
     |                 Report, Notification, Admin
-    |-- models/       User, Organization, Opportunity, Registration, Hour, Notification
+    |-- models/       User, Organization, Opportunity, Registration, Hour, Notification, SavedOpportunity
     |-- utils/        Database, Auth, Csrf, Flash, helpers.php, exporters/ (Csv, Pdf)
     `-- views/        layouts, home, auth, opportunities, volunteer, org, admin, notifications
 ```

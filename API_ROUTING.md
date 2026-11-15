@@ -39,20 +39,23 @@ Generated from `config/routes.php` (snapshot 2026-11-13). If the route table cha
 
 | Method | Path | Controller action | Access |
 |---|---|---|---|
-| GET | `/opportunities` | `OpportunityController@index` | G, V |
-| GET | `/opportunities/{id}` | `OpportunityController@show` | G, V |
+| GET | `/opportunities` | `OpportunityController@index` | G, V, O |
+| GET | `/opportunities/{id}` | `OpportunityController@show` | G, V, O |
+| GET | `/opportunities/{id}/register` | `RegistrationController@showRegister` | V, O |
+| POST | `/opportunities/{id}/save` | `VolunteerController@saveOpportunity` | V, O |
+| POST | `/opportunities/{id}/unsave` | `VolunteerController@unsaveOpportunity` | V, O |
 
-## Volunteer
+## Volunteer & Community
 
 | Method | Path | Controller action | Access |
 |---|---|---|---|
-| POST | `/opportunities/{id}/register` | `RegistrationController@store` | V |
-| POST | `/registrations/{id}/cancel` | `RegistrationController@cancel` | V (owner) |
-| GET | `/volunteer/dashboard` | `VolunteerController@dashboard` | V |
-| GET | `/volunteer/registrations` | `VolunteerController@registrations` | V |
-| GET | `/volunteer/saved` | `VolunteerController@saved` | V |
-| GET | `/volunteer/hours` | `VolunteerController@hours` | V (verified and pending shown separately) |
-| POST | `/volunteer/hours/{id}/claim` | `VolunteerController@claimHours` | V (owner of registration {id}) |
+| POST | `/opportunities/{id}/register` | `RegistrationController@store` | V, O |
+| POST | `/registrations/{id}/cancel` | `RegistrationController@cancel` | V, O (owner) |
+| GET | `/volunteer/dashboard` | `VolunteerController@dashboard` | V, O |
+| GET | `/volunteer/registrations` | `VolunteerController@registrations` | V, O |
+| GET | `/volunteer/saved` | `VolunteerController@saved` | V, O |
+| GET | `/volunteer/hours` | `VolunteerController@hours` | V, O (verified and pending shown separately) |
+| POST | `/volunteer/hours/{id}/claim` | `VolunteerController@claimHours` | V, O (owner of registration {id}) |
 
 ## Organization
 
@@ -105,6 +108,7 @@ Generated from `config/routes.php` (snapshot 2026-11-13). If the route table cha
 | `GET /register` | `auth/register`; with `?role=organization`: `org/guest` (guest) or `org/register` (logged in) |
 | `GET /opportunities` | `opportunities/index` |
 | `GET /opportunities/{id}` | `opportunities/show` |
+| `GET /opportunities/{id}/register` | `opportunities/register` |
 | `POST /opportunities/{id}/register` | `opportunities/confirmed` on success |
 | `GET /volunteer/dashboard` | `volunteer/dashboard` |
 | `GET /volunteer/registrations` | `volunteer/registrations` |
@@ -126,5 +130,6 @@ Generated from `config/routes.php` (snapshot 2026-11-13). If the route table cha
 
 - `GET /register?role=organization` and `GET /org/register` are equivalent; both call `AuthController::showRegister`.
 - `POST /org/register` sets `role = organization` and then runs the same `register()` method as `POST /register`.
-- `/volunteer/saved` renders an empty list until a saved-opportunities table exists (see `docs/KNOWN_GAPS.md`, G-17).
-- The view `opportunities/register` exists but no route renders it (G-20).
+- `/volunteer/saved` renders bookmarked opportunities persisted in the `saved_opportunities` database table (G-17).
+- The view `opportunities/register` is rendered by `GET /opportunities/{id}/register` (G-20).
+- Users with the `organization` role hold dual capacity and can access `/volunteer/*` routes as well as save and register for community opportunities outside their own organization (G-19).

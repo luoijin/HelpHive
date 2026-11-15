@@ -211,7 +211,9 @@ const OPPORTUNITIES_DATA = [
 // App State
 let currentLayer = 'guest';
 let selectedOpportunity = OPPORTUNITIES_DATA[0];
-let savedOpportunities = new Set(['coastal-cleanup', 'weekend-reading-buddies']);
+let savedOpportunities = new Set(
+  Array.isArray(window.SAVED_OPPORTUNITY_IDS) ? window.SAVED_OPPORTUNITY_IDS.map(String) : []
+);
 let myApplications = [
   {
     oppId: 'animal-shelter-assistant',
@@ -239,6 +241,9 @@ let previousView = 'home';
 
 // Initialize
 document.addEventListener('DOMContentLoaded', () => {
+  if (Array.isArray(window.SAVED_OPPORTUNITY_IDS)) {
+    window.SAVED_OPPORTUNITY_IDS.forEach(id => savedOpportunities.add(String(id)));
+  }
   if (window.lucide) {
     lucide.createIcons();
   }
@@ -412,18 +417,32 @@ function getOpportunityById(oppId) {
   return all.find(o => String(o.id).toLowerCase() === strId || (o.slug && o.slug.toLowerCase() === strId)) || null;
 }
 
-function renderOpportunitiesList(data) {
+let clientLastDataset = null;
+let clientCurrentPage = 1;
+const CLIENT_PER_PAGE = 6;
+
+function goToOpportunityPage(page) {
+  renderOpportunitiesList(clientLastDataset, page);
+  const container = document.getElementById('opportunities-container');
+  if (container) {
+    container.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
+}
+
+function renderOpportunitiesList(data, pageNum) {
   const container = document.getElementById('opportunities-container');
   const countBadge = document.getElementById('results-count-badge');
   if (!container) return;
 
   const dataset = data !== undefined ? data : getAllOpportunities();
+  clientLastDataset = dataset;
 
+  const totalItems = dataset.length;
   if (countBadge) {
-    countBadge.textContent = `${dataset.length} Opportunities`;
+    countBadge.textContent = `${totalItems} ${totalItems === 1 ? 'Opportunity' : 'Opportunities'}`;
   }
 
-  if (dataset.length === 0) {
+  if (totalItems === 0) {
     container.innerHTML = `
       <div style="text-align: center; padding: 48px; background: #fff; border: 1px solid var(--slate-border); border-radius: var(--radius-lg);">
         <h3 style="font-size: 20px; font-weight: 700; margin-bottom: 8px;">No matching opportunities found</h3>
@@ -431,11 +450,18 @@ function renderOpportunitiesList(data) {
         <button class="btn btn-ghost" onclick="resetAllFilters()">Reset All Filters</button>
       </div>
     `;
+    const paginationWrap = document.getElementById('pagination-controls') || document.querySelector('.pagination-wrap');
+    if (paginationWrap) paginationWrap.style.display = 'none';
     return;
   }
 
-  container.innerHTML = dataset.map(opp => {
-    const isSaved = savedOpportunities.has(opp.id) || savedOpportunities.has(opp.slug);
+  const totalPages = Math.max(1, Math.ceil(totalItems / CLIENT_PER_PAGE));
+  clientCurrentPage = typeof pageNum === 'number' ? Math.min(Math.max(1, pageNum), totalPages) : 1;
+  const startIdx = (clientCurrentPage - 1) * CLIENT_PER_PAGE;
+  const pagedData = dataset.slice(startIdx, startIdx + CLIENT_PER_PAGE);
+
+  container.innerHTML = pagedData.map(opp => {
+    const isSaved = savedOpportunities.has(String(opp.id)) || (opp.slug && savedOpportunities.has(opp.slug));
     return `
       <article class="opportunity-card" onclick="window.location.href='/opportunities/${opp.id}'">
         <div class="opp-thumbnail">
@@ -449,7 +475,7 @@ function renderOpportunitiesList(data) {
             </div>
             <button type="button" class="bookmark-btn ${isSaved ? 'saved' : ''}" 
                     title="${isSaved ? 'Remove Bookmark' : 'Save Opportunity'}"
-                    onclick="toggleSaveOpportunity(event, '${opp.id}')">
+                    onclick="event.stopPropagation(); toggleSaveOpportunity(event, '${opp.id}')">
               <i data-lucide="bookmark" ${isSaved ? 'style="fill: var(--primary-yellow);"' : ''}></i>
             </button>
           </div>
@@ -472,6 +498,39 @@ function renderOpportunitiesList(data) {
       </article>
     `;
   }).join('');
+
+  // Update pagination controls
+  const paginationWrap = document.getElementById('pagination-controls') || document.querySelector('.pagination-wrap');
+  if (paginationWrap) {
+    paginationWrap.style.display = 'flex';
+    if (totalPages <= 1) {
+      paginationWrap.innerHTML = `
+        <button type="button" class="pagination-btn disabled"><i data-lucide="chevron-left"></i></button>
+        <button type="button" class="pagination-btn active">1</button>
+        <button type="button" class="pagination-btn disabled"><i data-lucide="chevron-right"></i></button>
+      `;
+    } else {
+      let pagesHtml = `
+        <button type="button" class="pagination-btn ${clientCurrentPage <= 1 ? 'disabled' : ''}" 
+                onclick="goToOpportunityPage(${clientCurrentPage - 1})" title="Previous Page">
+          <i data-lucide="chevron-left"></i>
+        </button>
+      `;
+      for (let p = 1; p <= totalPages; p++) {
+        pagesHtml += `
+          <button type="button" class="pagination-btn ${p === clientCurrentPage ? 'active' : ''}" 
+                  onclick="goToOpportunityPage(${p})">${p}</button>
+        `;
+      }
+      pagesHtml += `
+        <button type="button" class="pagination-btn ${clientCurrentPage >= totalPages ? 'disabled' : ''}" 
+                onclick="goToOpportunityPage(${clientCurrentPage + 1})" title="Next Page">
+          <i data-lucide="chevron-right"></i>
+        </button>
+      `;
+      paginationWrap.innerHTML = pagesHtml;
+    }
+  }
 
   if (window.lucide) {
     lucide.createIcons();
@@ -668,8 +727,11 @@ function renderApplicationsList() {
 }
 
 function toggleSaveOpportunity(e, oppId) {
-  e.stopPropagation();
-  const isUser = document.body && document.body.getAttribute('data-mode') === 'user';
+  if (e) e.stopPropagation();
+  const isUser = (document.body && document.body.getAttribute('data-mode') === 'user')
+    || !!document.querySelector('.nav-actions.user-only')
+    || (window.CURRENT_USER && window.CURRENT_USER.id);
+
   if (!isUser) {
     if (typeof openModal === 'function') {
       openModal('login-modal');
@@ -677,15 +739,44 @@ function toggleSaveOpportunity(e, oppId) {
     showToast('Please log in to save opportunities to your bookmarks.');
     return;
   }
-  if (savedOpportunities.has(oppId)) {
-    savedOpportunities.delete(oppId);
-    showToast('Removed from Saved Opportunities');
-  } else {
-    savedOpportunities.add(oppId);
-    showToast('Saved to your bookmarks!');
-  }
-  renderOpportunitiesList(getFilteredOpportunities());
-  renderSavedList();
+
+  const idStr = String(oppId);
+  const numId = parseInt(oppId, 10);
+  const isCurrentlySaved = savedOpportunities.has(idStr) || (!isNaN(numId) && savedOpportunities.has(numId));
+  const endpoint = isCurrentlySaved 
+    ? `/opportunities/${numId}/unsave` 
+    : `/opportunities/${numId}/save`;
+
+  // CSRF token from page form if available
+  const csrfInput = document.querySelector('input[name="csrf"]');
+  const csrfToken = csrfInput ? csrfInput.value : '';
+
+  const formData = new FormData();
+  if (csrfToken) formData.append('csrf', csrfToken);
+
+  fetch(endpoint, {
+    method: 'POST',
+    headers: {
+      'Accept': 'application/json',
+      'X-Requested-With': 'XMLHttpRequest'
+    },
+    body: formData
+  })
+  .then(res => res.json())
+  .catch(() => ({ status: 'ok', saved: !isCurrentlySaved }))
+  .then(data => {
+    if (isCurrentlySaved) {
+      savedOpportunities.delete(idStr);
+      if (!isNaN(numId)) savedOpportunities.delete(numId);
+      showToast('Removed from Saved Opportunities');
+    } else {
+      savedOpportunities.add(idStr);
+      if (!isNaN(numId)) savedOpportunities.add(numId);
+      showToast('Saved to your bookmarks!');
+    }
+    renderOpportunitiesList(getFilteredOpportunities(), clientCurrentPage);
+    renderSavedList();
+  });
 }
 
 function renderSavedList() {

@@ -2,6 +2,7 @@
 declare(strict_types=1);
 
 $opp = $opportunity ?? [];
+$regCount = (int) ($registeredCount ?? 0);
 ?>
 <!-- EDIT OPPORTUNITY VIEW -->
 <section id="view-edit-opportunity" class="page-view active" style="display: block;">
@@ -57,8 +58,8 @@ $opp = $opportunity ?? [];
             <input type="datetime-local" id="opp-deadline" name="registration_deadline" value="<?= !empty($opp['registration_deadline']) ? date('Y-m-d\TH:i', strtotime($opp['registration_deadline'])) : '' ?>" required>
           </div>
           <div class="form-group">
-            <label for="opp-capacity">Volunteer Capacity*</label>
-            <input type="number" id="opp-capacity" name="capacity" min="1" max="1000" value="<?= (int) ($opp['capacity'] ?? 25) ?>" required>
+            <label for="opp-capacity">Volunteer Capacity* <?php if ($regCount > 0): ?><span style="font-size: 12px; color: var(--slate-muted); font-weight: normal;">(Min <?= $regCount ?> registered)</span><?php endif; ?></label>
+            <input type="number" id="opp-capacity" name="capacity" min="<?= max(1, $regCount) ?>" max="1000" value="<?= (int) ($opp['capacity'] ?? 25) ?>" required>
           </div>
         </div>
 
@@ -75,11 +76,12 @@ $opp = $opportunity ?? [];
         <div class="form-group">
           <label for="opp-status">Status</label>
           <select id="opp-status" name="status">
-            <option value="draft" <?= ($opp['status'] ?? '') === 'draft' ? 'selected' : '' ?>>Draft</option>
+            <option value="draft" <?= ($opp['status'] ?? '') === 'draft' ? 'selected' : '' ?> <?= ($regCount > 0 && ($opp['status'] ?? '') === 'published') ? 'disabled' : '' ?>>Draft <?= ($regCount > 0 && ($opp['status'] ?? '') === 'published') ? '(Disabled: volunteers registered)' : '' ?></option>
             <option value="published" <?= ($opp['status'] ?? '') === 'published' ? 'selected' : '' ?>>Published</option>
-            <option value="cancelled" <?= ($opp['status'] ?? '') === 'cancelled' ? 'selected' : '' ?>>Cancelled</option>
-            <option value="completed" <?= ($opp['status'] ?? '') === 'completed' ? 'selected' : '' ?>>Completed</option>
           </select>
+          <small style="display: block; margin-top: 4px; color: var(--slate-muted); font-size: 12px;">
+            To cancel an active opportunity and notify volunteers, use the "Cancel" button on the Manage Opportunities page.
+          </small>
         </div>
 
         <button type="submit" class="btn btn-primary btn-full">Update Opportunity</button>

@@ -41,25 +41,28 @@ return [
     ['POST', '/logout',                         'AuthController@logout'],            // AUTH
 
     // ---------------------------------------------------------------
-    // Opportunity discovery (search, filter, detail)
+    // Opportunity discovery (search, filter, detail, bookmarks)
     // ---------------------------------------------------------------
-    ['GET',  '/opportunities',                  'OpportunityController@index'],      // G, V
-    ['GET',  '/opportunities/{id}',             'OpportunityController@show'],       // G, V
+    ['GET',  '/opportunities',                  'OpportunityController@index'],      // G, V, O
+    ['GET',  '/opportunities/{id}',             'OpportunityController@show'],       // G, V, O
+    ['GET',  '/opportunities/{id}/register',    'RegistrationController@showRegister'], // V, O
+    ['POST', '/opportunities/{id}/save',        'VolunteerController@saveOpportunity'], // V, O
+    ['POST', '/opportunities/{id}/unsave',      'VolunteerController@unsaveOpportunity'], // V, O
 
     // ---------------------------------------------------------------
-    // Volunteer: registration
+    // Volunteer & Community: registration
     // ---------------------------------------------------------------
-    ['POST', '/opportunities/{id}/register',    'RegistrationController@store'],     // V
-    ['POST', '/registrations/{id}/cancel',      'RegistrationController@cancel'],    // V (owner)
+    ['POST', '/opportunities/{id}/register',    'RegistrationController@store'],     // V, O
+    ['POST', '/registrations/{id}/cancel',      'RegistrationController@cancel'],    // V, O (owner)
 
     // ---------------------------------------------------------------
-    // Volunteer: dashboard and hours
+    // Volunteer & Community: dashboard and hours
     // ---------------------------------------------------------------
-    ['GET',  '/volunteer/dashboard',            'VolunteerController@dashboard'],    // V
-    ['GET',  '/volunteer/registrations',        'VolunteerController@registrations'],// V
-    ['GET',  '/volunteer/saved',                'VolunteerController@saved'],        // V
-    ['GET',  '/volunteer/hours',                'VolunteerController@hours'],        // V (verified and pending shown separately)
-    ['POST', '/volunteer/hours/{id}/claim',     'VolunteerController@claimHours'],   // V (owner of registration {id})
+    ['GET',  '/volunteer/dashboard',            'VolunteerController@dashboard'],    // V, O
+    ['GET',  '/volunteer/registrations',        'VolunteerController@registrations'],// V, O
+    ['GET',  '/volunteer/saved',                'VolunteerController@saved'],        // V, O
+    ['GET',  '/volunteer/hours',                'VolunteerController@hours'],        // V, O (verified and pending shown separately)
+    ['POST', '/volunteer/hours/{id}/claim',     'VolunteerController@claimHours'],   // V, O (owner of registration {id})
 
     // ---------------------------------------------------------------
     // Organization: dashboard and profile
