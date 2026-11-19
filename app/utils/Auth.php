@@ -74,13 +74,14 @@ final class Auth
         return self::user()['id'] ?? null;
     }
 
-    /** Require any authenticated user; redirect guests to /login. */
+    /** Require any authenticated user; redirect guests to home with login modal opened. */
     public static function requireLogin(): array
     {
         self::checkSessionUser();
         $user = self::user();
         if ($user === null) {
-            redirect('/login');
+            Flash::error('Please log in to continue.');
+            redirect('/?modal=login');
         }
         return $user;
     }

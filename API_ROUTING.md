@@ -104,8 +104,8 @@ Generated from `config/routes.php` (snapshot 2026-11-13). If the route table cha
 | Route | View |
 |---|---|
 | `GET /` | `home/index` |
-| `GET /login` | `auth/login` (also the login modal in `layouts/modals`) |
-| `GET /register` | `auth/register`; with `?role=organization`: `org/guest` (guest) or `org/register` (logged in) |
+| `GET /login` | Redirects to `/?modal=login` (modal-based authentication) |
+| `GET /register` | With `?role=organization`: `org/guest` (guest) or `org/register` (logged in); volunteer sign-up redirects to `/?modal=signup` (modal-based) |
 | `GET /opportunities` | `opportunities/index` |
 | `GET /opportunities/{id}` | `opportunities/show` |
 | `GET /opportunities/{id}/register` | `opportunities/register` |

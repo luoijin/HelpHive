@@ -35,7 +35,8 @@ final class AuthController
             redirect('/');
         }
 
-        view('auth/register', ['title' => 'Create Account — HelpHive']);
+        // Standard volunteer signup is modal-based; redirect to home with signup modal opened
+        redirect('/?modal=signup');
     }
 
     /** GET /org/register */
@@ -52,6 +53,21 @@ final class AuthController
         $this->register();
     }
 
+    /**
+     * Resolve a safe return URL from POST or fallback to home.
+     */
+    private function resolveReturnUrl(string $default = '/'): string
+    {
+        $raw = trim($_POST['return_to'] ?? $default);
+        if ($raw === '' || !str_starts_with($raw, '/') || str_starts_with($raw, '//')) {
+            $raw = $default;
+        }
+        // Strip any existing modal query parameter
+        $clean = preg_replace('/([?&])modal=[^&]*(&|$)/', '$1', $raw);
+        $clean = rtrim((string) $clean, '?&');
+        return $clean !== '' ? $clean : '/';
+    }
+
     /** POST /register */
     public function register(): void
     {
@@ -60,19 +76,29 @@ final class AuthController
             $role = 'volunteer';
         }
 
+        $returnTo = $this->resolveReturnUrl('/');
+        $signupModalUrl = $returnTo . (str_contains($returnTo, '?') ? '&' : '?') . 'modal=signup';
+        $loginModalUrl = $returnTo . (str_contains($returnTo, '?') ? '&' : '?') . 'modal=login';
+
         // Organization registration (User side validation)
         if ($role === 'organization') {
             $currentUser = Auth::user();
             if ($currentUser === null) {
                 Flash::error('You must be logged in to register an organization. Please log in or create an account first.');
-                redirect('/login');
+                redirect('/?modal=login');
             }
 
             $orgName = trim($_POST['organization_name'] ?? '');
-            $orgType = trim($_POST['organization_type'] ?? 'Nonprofit');
+            $orgType = trim($_POST['organization_type'] ?? 'Nonprofit Organization');
             $causeArea = trim($_POST['cause_area'] ?? '');
             $location = trim($_POST['location'] ?? '');
+            $streetAddress = trim($_POST['street_address'] ?? '');
             $description = trim($_POST['description'] ?? '');
+            $contactPerson = trim($_POST['contact_person'] ?? ($_POST['full_name'] ?? ''));
+            $position = trim($_POST['position'] ?? '');
+            $contactNumber = trim($_POST['contact_number'] ?? '');
+            $website = trim($_POST['website'] ?? '');
+
             $userModel = new UserModel(Database::connection());
             $userRecord = $userModel->findById((int) $currentUser['id']);
             $defaultEmail = $userRecord['email'] ?? '';
@@ -94,14 +120,29 @@ final class AuthController
                 redirect('/org/dashboard');
             }
 
-            $fullDesc = ($orgType ? "[Type: {$orgType}] " : '') . ($causeArea ? "[Cause: {$causeArea}] " : '') . $description;
+            $fullLocation = $location;
+            if ($streetAddress !== '') {
+                $fullLocation .= ', ' . $streetAddress;
+            }
+
+            $metadata = [];
+            if ($orgType !== '') { $metadata[] = "[Type: {$orgType}]"; }
+            if ($causeArea !== '') { $metadata[] = "[Cause: {$causeArea}]"; }
+            if ($contactPerson !== '') {
+                $rep = $contactPerson . ($position !== '' ? " - {$position}" : '');
+                $metadata[] = "[Representative: {$rep}]";
+            }
+            if ($contactNumber !== '') { $metadata[] = "[Phone: {$contactNumber}]"; }
+            if ($website !== '') { $metadata[] = "[Website: {$website}]"; }
+
+            $fullDesc = implode(' ', $metadata) . ($metadata ? "\n\n" : '') . $description;
 
             $orgModel->create(
                 (int) $currentUser['id'],
                 $orgName,
                 $fullDesc,
                 $contactEmail,
-                $location,
+                $fullLocation,
                 0 // requires admin approval
             );
 
@@ -116,7 +157,7 @@ final class AuthController
             redirect('/org/dashboard');
         }
 
-        // Standard account registration (Guest)
+        // Standard account registration (Guest modal)
         $email = strtolower(trim($_POST['email'] ?? ''));
         $password = $_POST['password'] ?? '';
         $passwordConfirmation = $_POST['password_confirmation'] ?? ($_POST['confirm_password'] ?? '');
@@ -126,28 +167,28 @@ final class AuthController
 
         if ($email === '' || $fullName === '' || $password === '') {
             Flash::error('Please fill in all required fields.');
-            redirect('/register');
+            redirect($signupModalUrl);
         }
 
         if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
             Flash::error('Please enter a valid email address.');
-            redirect('/register');
+            redirect($signupModalUrl);
         }
 
         if (strlen($password) < 8 || !preg_match('/[A-Za-z]/', $password) || !preg_match('/[0-9]/', $password)) {
             Flash::error('Password must be at least 8 characters long and contain both letters and numbers.');
-            redirect('/register');
+            redirect($signupModalUrl);
         }
 
         if ($passwordConfirmation === '' || $password !== $passwordConfirmation) {
             Flash::error('Passwords do not match. Please verify your password confirmation.');
-            redirect('/register');
+            redirect($signupModalUrl);
         }
 
         $userModel = new UserModel(Database::connection());
         if ($userModel->findByEmail($email) !== null) {
             Flash::error('An account with this email address already exists. Please log in.');
-            redirect('/login');
+            redirect($loginModalUrl);
         }
 
         $hash = password_hash($password, PASSWORD_DEFAULT);
@@ -157,7 +198,8 @@ final class AuthController
         Auth::login($user);
 
         Flash::success('Account created successfully! Welcome to HelpHive.');
-        redirect('/opportunities');
+        $successDestination = ($returnTo !== '/' && $returnTo !== '/register') ? $returnTo : '/opportunities';
+        redirect($successDestination);
     }
 
     /** GET /login */
@@ -166,7 +208,8 @@ final class AuthController
         if (Auth::user()) {
             redirect('/');
         }
-        view('auth/login', ['title' => 'Log In — HelpHive']);
+        // Login is modal-based; redirect to home with login modal opened
+        redirect('/?modal=login');
     }
 
     /** POST /login */
@@ -175,9 +218,12 @@ final class AuthController
         $email = strtolower(trim($_POST['email'] ?? ''));
         $password = $_POST['password'] ?? '';
 
+        $returnTo = $this->resolveReturnUrl('/');
+        $loginModalUrl = $returnTo . (str_contains($returnTo, '?') ? '&' : '?') . 'modal=login';
+
         if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
             Flash::error('Please enter a valid email address.');
-            redirect('/login');
+            redirect($loginModalUrl);
         }
 
         // Rate-limiting / lockout check (G-21)
@@ -188,7 +234,7 @@ final class AuthController
         if (!empty($attempts['locked_until']) && $attempts['locked_until'] > time()) {
             $remainingMinutes = (int) ceil(($attempts['locked_until'] - time()) / 60);
             Flash::error("Too many failed login attempts. Your account is temporarily locked. Please try again in {$remainingMinutes} minute(s).");
-            redirect('/login');
+            redirect($loginModalUrl);
         }
 
         $userModel = new UserModel(Database::connection());
@@ -205,7 +251,7 @@ final class AuthController
                 $remaining = 5 - $attempts['count'];
                 Flash::error("Invalid email or password. ({$remaining} attempts remaining before temporary lockout).");
             }
-            redirect('/login');
+            redirect($loginModalUrl);
         }
 
         // Clear failed attempts counter on success
@@ -213,7 +259,7 @@ final class AuthController
 
         if (empty($user['is_active'])) {
             Flash::error('Your account has been deactivated. Please contact support.');
-            redirect('/login');
+            redirect($loginModalUrl);
         }
 
         Auth::login($user);
@@ -224,7 +270,11 @@ final class AuthController
         } elseif ($user['role'] === Auth::ADMIN) {
             redirect('/admin/dashboard');
         } else {
-            redirect('/volunteer/dashboard');
+            // Volunteer: return to previous page if meaningful, otherwise volunteer dashboard
+            $dest = ($returnTo !== '/' && !str_starts_with($returnTo, '/org') && !str_starts_with($returnTo, '/admin'))
+                ? $returnTo
+                : '/volunteer/dashboard';
+            redirect($dest);
         }
     }
 

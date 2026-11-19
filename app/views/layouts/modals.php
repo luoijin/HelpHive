@@ -1,8 +1,12 @@
 <?php
 declare(strict_types=1);
+
+$activeModal = $_GET['modal'] ?? ($_SESSION['open_modal'] ?? '');
+unset($_SESSION['open_modal']);
+$currentUri = $_SERVER['REQUEST_URI'] ?? '/';
 ?>
 <!-- ================= MODAL: LOGIN ================= -->
-<div class="modal-backdrop" id="login-modal" onclick="handleBackdropClick(event, 'login-modal')">
+<div class="modal-backdrop <?= $activeModal === 'login' ? 'active' : '' ?>" id="login-modal" onclick="handleBackdropClick(event, 'login-modal')">
   <div class="modal-card">
     <button type="button" class="modal-close-btn" onclick="closeModal('login-modal')"><i data-lucide="x"></i></button>
 
@@ -44,6 +48,7 @@ declare(strict_types=1);
     <!-- Login Form -->
     <form action="/login" method="POST">
       <?= Csrf::field() ?>
+      <input type="hidden" name="return_to" value="<?= e($currentUri) ?>">
       <div class="form-group">
         <label for="login-email">Email Address</label>
         <input type="email" id="login-email" name="email" required placeholder="Enter your email">
@@ -68,7 +73,7 @@ declare(strict_types=1);
 </div>
 
 <!-- ================= MODAL: SIGN UP ================= -->
-<div class="modal-backdrop" id="signup-modal" onclick="handleBackdropClick(event, 'signup-modal')">
+<div class="modal-backdrop <?= $activeModal === 'signup' ? 'active' : '' ?>" id="signup-modal" onclick="handleBackdropClick(event, 'signup-modal')">
   <div class="modal-card">
     <button type="button" class="modal-close-btn" onclick="closeModal('signup-modal')"><i data-lucide="x"></i></button>
 
@@ -110,6 +115,7 @@ declare(strict_types=1);
     <!-- Sign Up Form -->
     <form action="/register" method="POST">
       <?= Csrf::field() ?>
+      <input type="hidden" name="return_to" value="<?= e($currentUri) ?>">
       <div class="form-row-2">
         <div class="form-group">
           <label for="signup-first-name">First Name</label>

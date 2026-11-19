@@ -53,6 +53,7 @@
 - Custom interactive dropdown UI for the "I want to join as" role selection on Sign Up modal and register views with role icons, titles, and descriptions.
 
 ### Changed
+- Removed standalone login and register pages (`app/views/auth/login.php` and `app/views/auth/register.php`) in favor of a unified modal-based authentication architecture. Fixed authentication and validation failure handling to retain users on their current page with the modal automatically reopened and flash errors displayed.
 - Opportunity cards now remain completely static in position on hover (removed physical movement / translate animation).
 - Aligned the divider line below the HelpHive logo on Login and Sign Up modals to span the full width of the form content for a clean, professional aesthetic.
 - Login and Sign Up buttons now maintain static dimensions on hover without any scaling or enlargement.

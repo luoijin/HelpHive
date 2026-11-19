@@ -289,6 +289,17 @@ document.addEventListener('DOMContentLoaded', () => {
       if (distPanel) distPanel.classList.remove('show');
     }
   });
+
+  // Auto-open modal if specified in URL query (e.g. ?modal=login or ?modal=signup)
+  try {
+    const urlParams = new URLSearchParams(window.location.search);
+    const modalParam = urlParams.get('modal');
+    if (modalParam === 'login') {
+      openModal('login-modal');
+    } else if (modalParam === 'signup') {
+      openModal('signup-modal');
+    }
+  } catch (err) {}
 });
 
 /* ========================================================
@@ -1308,6 +1319,14 @@ function openModal(modalId) {
 function closeModal(modalId) {
   const modal = document.getElementById(modalId);
   if (modal) modal.classList.remove('active');
+  try {
+    const url = new URL(window.location.href);
+    if (url.searchParams.has('modal')) {
+      url.searchParams.delete('modal');
+      const cleanUrl = url.pathname + (url.search ? url.search : '') + url.hash;
+      window.history.replaceState({}, '', cleanUrl);
+    }
+  } catch (err) {}
 }
 
 function handleBackdropClick(e, modalId) {
@@ -1319,6 +1338,16 @@ function handleBackdropClick(e, modalId) {
 function switchModal(currentId, targetId) {
   closeModal(currentId);
   openModal(targetId);
+  try {
+    const url = new URL(window.location.href);
+    if (targetId === 'login-modal') {
+      url.searchParams.set('modal', 'login');
+    } else if (targetId === 'signup-modal') {
+      url.searchParams.set('modal', 'signup');
+    }
+    const cleanUrl = url.pathname + (url.search ? url.search : '') + url.hash;
+    window.history.replaceState({}, '', cleanUrl);
+  } catch (err) {}
 }
 
 function mockSocialLogin(provider) {

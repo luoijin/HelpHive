@@ -30,13 +30,12 @@ declare(strict_types=1);
   <section class="section-container hive-cards-section">
     <div class="section-heading text-center">
       <h2 class="section-title">Find Your Place in the <span class="text-yellow">Hive</span> and Make a Difference</h2>
-      <p class="section-subtitle">Everyone has something to give. Find a cause close to your heart and make a difference, one good deed at a time.</p>
     </div>
 
     <div class="hive-cards-grid">
       <!-- Card 1 -->
-      <div class="hive-feature-card">
-        <a href="#" class="hive-card-arrow" onclick="openModal('signup-modal'); return false;" aria-label="Join the Hive">
+      <div class="hive-feature-card" onclick="openModal('login-modal')" style="cursor: pointer;">
+        <a href="#" class="hive-card-arrow" onclick="event.stopPropagation(); openModal('login-modal'); return false;" aria-label="Join the Hive">
           <i data-lucide="arrow-up-right"></i>
         </a>
         <div class="hive-card-icon-center">
@@ -47,8 +46,8 @@ declare(strict_types=1);
       </div>
 
       <!-- Card 2 -->
-      <div class="hive-feature-card">
-        <a href="/opportunities" class="hive-card-arrow" aria-label="Volunteer Opportunities">
+      <div class="hive-feature-card" onclick="window.location.href='/opportunities'" style="cursor: pointer;">
+        <a href="/opportunities" class="hive-card-arrow" onclick="event.stopPropagation();" aria-label="Volunteer Opportunities">
           <i data-lucide="arrow-up-right"></i>
         </a>
         <div class="hive-card-icon-center">
@@ -59,8 +58,8 @@ declare(strict_types=1);
       </div>
 
       <!-- Card 3 -->
-      <div class="hive-feature-card">
-        <a href="/register?role=organization" class="hive-card-arrow" aria-label="Register Your Organization">
+      <div class="hive-feature-card" onclick="window.location.href='/org/register'" style="cursor: pointer;">
+        <a href="/org/register" class="hive-card-arrow" onclick="event.stopPropagation();" aria-label="Register Your Organization">
           <i data-lucide="arrow-up-right"></i>
         </a>
         <div class="hive-card-icon-center">
@@ -77,7 +76,7 @@ declare(strict_types=1);
     <div class="section-container">
       <div class="section-heading text-center">
         <h2 class="section-title">Causes You Can Support</h2>
-        <p class="section-subtitle">Explore key initiatives that bring positive transformation across neighborhoods and beyond.</p>
+       
       </div>
 
       <div class="causes-grid">
@@ -128,6 +127,70 @@ declare(strict_types=1);
             <a href="/opportunities?cause=Animal+Welfare" class="btn btn-cause" style="text-decoration: none; display: inline-block;">Explore Cause</a>
           </div>
         </article>
+      </div>
+    </div>
+  </section>
+
+  <!-- About HelpHive Section -->
+  <section id="about" class="about-section">
+    <div class="section-container">
+      <div class="about-grid">
+        <div class="about-text-content">
+          <span class="about-eyebrow">ABOUT HELPHIVE</span>
+          <h2 class="section-title">Empowering Communities Through <span class="text-yellow">Purposeful Action</span></h2>
+          <p class="about-lead">
+            HelpHive is a community-driven volunteering platform dedicated to bridging the gap between compassionate individuals and passionate grassroots organizations.
+          </p>
+          <p class="about-description">
+            We believe that every small act of kindness creates a ripple effect of hope. Whether it's restoring local coastlines, tutoring youth, packing food boxes for families, or caring for sheltered animals, HelpHive makes giving back transparent, accessible, and deeply rewarding.
+          </p>
+          <div class="about-stats-row">
+            <div class="about-stat-item">
+              <span class="about-stat-number">100%</span>
+              <span class="about-stat-label">Verified Service Hours</span>
+            </div>
+            <div class="about-stat-item">
+              <span class="about-stat-number">4+</span>
+              <span class="about-stat-label">Core Impact Causes</span>
+            </div>
+            <div class="about-stat-item">
+              <span class="about-stat-number">Direct</span>
+              <span class="about-stat-label">Community Impact</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="about-cards-col">
+          <div class="about-feature-box">
+            <div class="about-feature-icon">
+              <i data-lucide="heart-handshake"></i>
+            </div>
+            <div class="about-feature-info">
+              <h3>Connect With Purpose</h3>
+              <p>Discover local initiatives aligned with your personal passions, schedule, and skillset.</p>
+            </div>
+          </div>
+
+          <div class="about-feature-box">
+            <div class="about-feature-icon">
+              <i data-lucide="shield-check"></i>
+            </div>
+            <div class="about-feature-info">
+              <h3>Verified Organizations</h3>
+              <p>Every nonprofit and community group is reviewed by administrators to ensure meaningful and safe volunteer experiences.</p>
+            </div>
+          </div>
+
+          <div class="about-feature-box">
+            <div class="about-feature-icon">
+              <i data-lucide="award"></i>
+            </div>
+            <div class="about-feature-info">
+              <h3>Track Your Real Impact</h3>
+              <p>Log attendance, earn verified community service hours, and download official participation reports anytime.</p>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   </section>

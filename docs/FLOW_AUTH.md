@@ -24,22 +24,22 @@ There is no public administrator registration. Administrator accounts are create
 
 ## 2. Volunteer registration (`POST /register`)
 
-The "I want to join as" selector sends `role`. Any value other than `volunteer` or `organization` is coerced to `volunteer`. The volunteer path runs when `role = volunteer`.
+Volunteer registration is modal-based (`#signup-modal`). Standalone auth pages are removed. The "I want to join as" selector sends `role`. Any value other than `volunteer` or `organization` is coerced to `volunteer`. The volunteer path runs when `role = volunteer`.
 
 ```mermaid
 flowchart TD
-    A(["Submit sign-up form<br/>first_name, last_name, email, password, csrf"]) --> B{"CSRF token valid?"}
+    A(["Submit sign-up modal<br/>first_name, last_name, email, password, confirm, return_to, csrf"]) --> B{"CSRF token valid?"}
     B -- "No" --> B1["419 Invalid CSRF token"]
     B -- "Yes" --> C["trim names and email"]
-    C --> D{"email not empty<br/>AND full name not empty<br/>AND password length >= 8?"}
-    D -- "No" --> D1["Flash error<br/>redirect /register"]
+    C --> D{"valid email<br/>AND full name<br/>AND password >= 8 with letters & digits<br/>AND confirmation matches?"}
+    D -- "No" --> D1["Flash error<br/>redirect return_to?modal=signup"]
     D -- "Yes" --> E{"UserModel::findByEmail<br/>already exists?"}
-    E -- "Yes" --> E1["Flash error<br/>redirect /login"]
+    E -- "Yes" --> E1["Flash error<br/>redirect return_to?modal=login"]
     E -- "No" --> F["password_hash(PASSWORD_DEFAULT)"]
     F --> G["UserModel::create(role = volunteer)<br/>INSERT users"]
     G --> H["UserModel::findById"]
     H --> I["Auth::login<br/>session_regenerate_id(true)<br/>store id, name, role"]
-    I --> J["Flash success<br/>redirect /opportunities"]
+    I --> J["Flash success<br/>redirect return_to or /opportunities"]
 ```
 
 Rules applied:
@@ -86,22 +86,26 @@ Effects to be aware of:
 
 ## 4. Login (`POST /login`)
 
+Login is modal-based (`#login-modal`).
+
 ```mermaid
 flowchart TD
-    A(["Submit login form<br/>email, password, csrf"]) --> B{"CSRF valid?"}
+    A(["Submit login modal<br/>email, password, return_to, csrf"]) --> B{"CSRF valid?"}
     B -- "No" --> B1["419"]
-    B -- "Yes" --> C["trim email"]
-    C --> D["UserModel::findByEmail"]
-    D --> E{"user found<br/>AND password_verify OK?"}
-    E -- "No" --> E1["Flash: Invalid email or password<br/>redirect /login"]
-    E -- "Yes" --> F{"users.is_active = 1?"}
-    F -- "No" --> F1["Flash: account deactivated<br/>redirect /login"]
-    F -- "Yes" --> G["Auth::login<br/>session_regenerate_id(true)<br/>session user = id, name, role"]
-    G --> H["Flash: Welcome back"]
-    H --> I{"role"}
-    I -- "organization" --> I1["redirect /org/dashboard"]
-    I -- "admin" --> I2["redirect /admin/dashboard"]
-    I -- "volunteer" --> I3["redirect /volunteer/dashboard"]
+    B -- "Yes" --> C["trim & lowercase email"]
+    C --> D{"Too many failed attempts?"}
+    D -- "Yes" --> D1["Flash: Temporarily locked<br/>redirect return_to?modal=login"]
+    D -- "No" --> E["UserModel::findByEmail"]
+    E --> F{"user found<br/>AND password_verify OK?"}
+    F -- "No" --> F1["Flash: Invalid email or password<br/>redirect return_to?modal=login"]
+    F -- "Yes" --> G{"users.is_active = 1?"}
+    G -- "No" --> G1["Flash: account deactivated<br/>redirect return_to?modal=login"]
+    G -- "Yes" --> H["Auth::login<br/>session_regenerate_id(true)<br/>session user = id, name, role"]
+    H --> I["Flash: Welcome back"]
+    I --> J{"role"}
+    J -- "organization" --> J1["redirect /org/dashboard"]
+    J -- "admin" --> J2["redirect /admin/dashboard"]
+    J -- "volunteer" --> J3["redirect return_to or /volunteer/dashboard"]
 ```
 
 Design notes:
@@ -160,6 +164,6 @@ sequenceDiagram
 
 | Role | Can register via | Lands on after login | Typical area |
 |---|---|---|---|
-| Volunteer | `/register` | `/volunteer/dashboard` | `/volunteer/*`, `/opportunities`, `/notifications` |
+| Volunteer | Sign Up modal | `/volunteer/dashboard` (or return page) | `/volunteer/*`, `/opportunities`, `/notifications` |
 | Organization | `/org/register` after logging in | `/org/dashboard` | `/org/*`, `/notifications` |
 | Admin | database only | `/admin/dashboard` | `/admin/*`, `/notifications` |
